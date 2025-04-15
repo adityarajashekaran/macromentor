@@ -877,15 +877,15 @@ export function Calculator() {
                                   </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent side="bottom" className="w-[var(--radix-select-trigger-width)] max-h-[300px]">
                                 {goalOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    <div className="flex flex-col">
-                                      <span>{option.label}</span>
+                                  <SelectItem key={option.value} value={option.value} className="flex-shrink-0">
+                                    <div className="w-full pr-4">
+                                      <div className="font-medium mb-0.5">{option.label}</div>
                                       {option.description && (
-                                        <span className="text-xs text-muted-foreground">
+                                        <div className="text-xs text-muted-foreground hyphens-auto break-words">
                                           {option.description}
-                                        </span>
+                                        </div>
                                       )}
                                     </div>
                                   </SelectItem>
