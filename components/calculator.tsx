@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, SubmitHandler, Resolver } from "react-hook-form"
+import { useForm, SubmitHandler, Resolver, FieldValues } from "react-hook-form"
 import { z } from "zod"
 import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -34,7 +34,7 @@ const formSchema = z.object({
   ),
   hasBodyFat: z.boolean().default(false),
   activityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"]),
-  exerciseFrequency: z.enum(["none", "light", "moderate", "intense"]).optional(),
+  exerciseFrequency: z.enum(["none", "light", "moderate", "intense"]),
   trainingExperience: z.enum(["none", "beginner", "intermediate", "advanced"]).optional(),
 
   // Step 3: Goals
@@ -106,6 +106,79 @@ const stepFields: Record<number, (keyof CalculatorFormValues)[]> = {
   4: ["dietType", "ethnicity", "hasNeckWaist", "neckCircumference", "waistCircumference"],
 }
 
+// Step 1: Basic Information
+const sexOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Prefer to Specify Differently" },
+]
+
+// Step 2: Body Composition & Activity
+const activityLevelOptions = [
+  { value: "sedentary", label: "Sedentary", description: "Desk job, little movement" },
+  { value: "light", label: "Lightly Active", description: "Light manual work, some walking" },
+  { value: "moderate", label: "Moderately Active", description: "Most trades, active job, regular walking" },
+  { value: "very", label: "Very Active", description: "Heavy manual labor, very active day" },
+  { value: "extra", label: "Extra Active", description: "Intense daily exercise + physical job" },
+]
+
+const exerciseFrequencyOptions = [
+  { value: "none", label: "None", description: "No regular exercise" },
+  { value: "light", label: "Light (1-2 days/wk)", description: "Low intensity workouts" },
+  { value: "moderate", label: "Moderate (3-4 days/wk)", description: "Moderate intensity workouts" },
+  { value: "intense", label: "Intense (5+ days/wk)", description: "High intensity workouts" },
+]
+
+const trainingExperienceOptions = [
+  { value: "none", label: "None", description: "No consistent strength training" },
+  { value: "beginner", label: "Beginner (<1 year)", description: "Less than 1 year consistent training" },
+  { value: "intermediate", label: "Intermediate (1-3 years)", description: "1-3 years consistent training" },
+  { value: "advanced", label: "Advanced (3+ years)", description: "3+ years consistent training" },
+]
+
+// Step 3: Goals
+const goalOptions = [
+  { value: "lose_fat", label: "Lose Fat", description: "Creates an energy deficit to promote fat loss while preserving muscle mass" },
+  { value: "build_muscle", label: "Build Lean Muscle", description: "Provides extra energy needed for muscle repair and growth with minimal fat gain" },
+  { value: "maintain", label: "Maintain Current Weight", description: "Balances energy intake with expenditure for weight stability" },
+  { value: "clean_bulk", label: "Clean Bulk", description: "Moderate surplus focused on quality nutrition for muscle gain with minimal fat" },
+  { value: "aggressive_bulk", label: "Aggressive Bulk", description: "Larger surplus to maximize muscle growth, accepting some fat gain" },
+  { value: "gain_weight", label: "Gain Weight", description: "For healthy weight gain when underweight or looking to increase overall mass" },
+  { value: "improve_health", label: "Improve Overall Health", description: "Focuses on nutrient-dense foods and balanced macros rather than weight change" },
+  { value: "recomposition", label: "Body Recomposition", description: "Aims to build muscle and lose fat simultaneously with high protein and training" },
+]
+
+const weightLossRateOptions = [
+  { value: "slow", label: "Slow (~0.5% of body weight/week)", description: "Gradual, sustainable approach" },
+  { value: "moderate", label: "Moderate (~0.75% of body weight/week)", description: "Balanced approach to fat loss" },
+  { value: "fast", label: "Fast (~1% of body weight/week)", description: "More aggressive approach" },
+]
+
+const weightGainRateOptions = [
+  { value: "slow", label: "Slow (~0.25kg/week)", description: "Minimize fat gain" },
+  { value: "moderate", label: "Moderate (~0.5kg/week)", description: "Balanced approach to weight gain" },
+]
+
+// Step 4: Advanced Options
+const dietTypeOptions = [
+  { value: "standard", label: "Omnivore" },
+  { value: "vegetarian", label: "Vegetarian" },
+  { value: "vegan", label: "Vegan" },
+]
+
+const ethnicityOptions = [
+  { value: "default", label: "Prefer not to say" },
+  { value: "caucasian", label: "White/European Descent" },
+  { value: "african", label: "Black/African Descent" },
+  { value: "east_asian", label: "East Asian Descent" },
+  { value: "south_asian", label: "South Asian Descent" },
+  { value: "hispanic", label: "Hispanic/Latino" },
+  { value: "indigenous", label: "Indigenous/Native Peoples" },
+  { value: "middle_eastern", label: "Middle Eastern/North African" },
+  { value: "nordic", label: "Nordic/Northern European" },
+  { value: "mixed", label: "Mixed/Multiracial" },
+]
+
 export function Calculator() {
   console.log("Calculator component rendering")
 
@@ -120,10 +193,16 @@ export function Calculator() {
   }, [])
 
   const defaultValues: Partial<CalculatorFormValues> = {
+    sex: undefined,
+    age: undefined,
+    height: undefined,
+    weight: undefined,
     bodyFat: undefined,
     hasBodyFat: false,
-    exerciseFrequency: "none",
+    activityLevel: undefined,
+    exerciseFrequency: undefined,
     trainingExperience: "none",
+    goal: undefined,
     targetWeight: undefined,
     weightLossRate: "moderate",
     weightGainRate: "slow",
@@ -135,7 +214,7 @@ export function Calculator() {
   }
 
   const form = useForm<CalculatorFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as Resolver<CalculatorFormValues, any>,
     defaultValues,
     mode: "onChange",
   })
@@ -143,6 +222,16 @@ export function Calculator() {
   const watchHasBodyFat = form.watch("hasBodyFat")
   const watchGoal = form.watch("goal")
   const watchHasNeckWaist = form.watch("hasNeckWaist")
+
+  // Add watch hooks for select values to update the trigger display
+  const watchActivityLevel = form.watch("activityLevel")
+  const watchExerciseFrequency = form.watch("exerciseFrequency")
+  const watchTrainingExperience = form.watch("trainingExperience")
+  const watchGoalSelection = form.watch("goal")
+  const watchWeightLossRate = form.watch("weightLossRate")
+  const watchWeightGainRate = form.watch("weightGainRate")
+  const watchDietType = form.watch("dietType")
+  const watchEthnicity = form.watch("ethnicity")
 
   async function nextStep() {
     const fieldsToValidate = stepFields[step]
@@ -682,7 +771,7 @@ export function Calculator() {
         </CardHeader>
         <CardContent className="p-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)} className="space-y-6">
               <AnimatePresence mode="wait">
                 {/* Step 1: Basic Information */}
                 {step === 1 && (
@@ -702,6 +791,7 @@ export function Calculator() {
                           <FormItem className="space-y-1">
                             <FormLabel className="flex items-center">
                               Sex Assigned at Birth
+                              <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Biological sex influences factors like hormone levels and typical body composition (muscle vs. fat mass), which affect baseline metabolism. We use this for selecting the base formula constant." />
                             </FormLabel>
                             <FormDescription>
@@ -713,39 +803,19 @@ export function Calculator() {
                                 defaultValue={field.value}
                                 className="flex flex-col sm:flex-row gap-4"
                               >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="male" id={`sex-male-${field.name}`} />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor={`sex-male-${field.name}`}
-                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
-                                  >
-                                    Male
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="female" id={`sex-female-${field.name}`} />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor={`sex-female-${field.name}`}
-                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
-                                  >
-                                    Female
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="other" id={`sex-other-${field.name}`} />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor={`sex-other-${field.name}`}
-                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
-                                  >
-                                    Prefer to Specify Differently
-                                  </FormLabel>
-                                </FormItem>
+                                {sexOptions.map((option) => (
+                                  <FormItem key={option.value} className="flex items-center space-x-3 space-y-0">
+                                    <FormControl>
+                                      <RadioGroupItem value={option.value} id={`sex-${option.value}-${field.name}`} />
+                                    </FormControl>
+                                    <FormLabel
+                                      htmlFor={`sex-${option.value}-${field.name}`}
+                                      className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
+                                    >
+                                      {option.label}
+                                    </FormLabel>
+                                  </FormItem>
+                                ))}
                               </RadioGroup>
                             </div>
                             <FormMessage />
@@ -760,6 +830,7 @@ export function Calculator() {
                           <FormItem>
                             <FormLabel className="flex items-center">
                               Age (Years)
+                              <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Your age influences your baseline metabolism (the calories your body burns at rest). Metabolic rate generally decreases slightly with age." />
                             </FormLabel>
                             <FormControl>
@@ -788,6 +859,7 @@ export function Calculator() {
                             <FormItem>
                               <FormLabel className="flex items-center">
                                 Height (cm)
+                                <span className="text-destructive ml-1">*</span>
                                 <InfoTooltip content="Height is a key factor in determining your body size, which influences your energy needs." />
                               </FormLabel>
                               <FormControl>
@@ -815,6 +887,7 @@ export function Calculator() {
                             <FormItem>
                               <FormLabel className="flex items-center">
                                 Weight (kg)
+                                <span className="text-destructive ml-1">*</span>
                                 <InfoTooltip content="Your current weight is the primary factor used to estimate your calorie needs and calculate goal-based adjustments." />
                               </FormLabel>
                               <FormControl>
@@ -924,55 +997,30 @@ export function Calculator() {
                           <FormItem>
                             <FormLabel className="text-base font-medium flex items-center">
                               Daily Activity Level (Non-Exercise)
+                              <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Select the level that best describes your typical daily activity, including your job and leisure time *outside* of planned exercise. This helps estimate calories burned through daily movement (NEAT)." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your activity level" />
+                                  <SelectValue placeholder="Select your activity level">
+                                    {watchActivityLevel ? activityLevelOptions.find(option => option.value === watchActivityLevel)?.label : "Select your activity level"}
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="sedentary">
-                                  <div className="flex flex-col">
-                                    <span>Sedentary</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Desk job, little movement
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="light">
-                                  <div className="flex flex-col">
-                                    <span>Lightly Active</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Light manual work, some walking
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="moderate">
-                                  <div className="flex flex-col">
-                                    <span>Moderately Active</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Most trades, active job, regular walking
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="very">
-                                  <div className="flex flex-col">
-                                    <span>Very Active</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Heavy manual labor, very active day
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="extra">
-                                  <div className="flex flex-col">
-                                    <span>Extra Active</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Intense daily exercise + physical job
-                                    </span>
-                                  </div>
-                                </SelectItem>
+                                {activityLevelOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    <div className="flex flex-col">
+                                      <span>{option.label}</span>
+                                      {option.description && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {option.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -987,40 +1035,30 @@ export function Calculator() {
                           <FormItem>
                             <FormLabel className="text-base font-medium flex items-center">
                               Planned Exercise
-                              <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                              <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Tell us about your structured workouts (gym, running, sports). This refines your TDEE by adding Exercise Activity Thermogenesis (EAT). Recommended for better accuracy." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your exercise frequency" />
+                                  <SelectValue placeholder="Select your exercise frequency">
+                                    {watchExerciseFrequency ? exerciseFrequencyOptions.find(option => option.value === watchExerciseFrequency)?.label : "Select your exercise frequency"}
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">
-                                  <div className="flex flex-col">
-                                    <span>None</span>
-                                    <span className="text-xs text-muted-foreground">No regular exercise</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="light">
-                                  <div className="flex flex-col">
-                                    <span>Light (1-2 days/wk)</span>
-                                    <span className="text-xs text-muted-foreground">Low intensity workouts</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="moderate">
-                                  <div className="flex flex-col">
-                                    <span>Moderate (3-4 days/wk)</span>
-                                    <span className="text-xs text-muted-foreground">Moderate intensity workouts</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="intense">
-                                  <div className="flex flex-col">
-                                    <span>Intense (5+ days/wk)</span>
-                                    <span className="text-xs text-muted-foreground">High intensity workouts</span>
-                                  </div>
-                                </SelectItem>
+                                {exerciseFrequencyOptions.map((option) => (
+                                   <SelectItem key={option.value} value={option.value}>
+                                    <div className="flex flex-col">
+                                      <span>{option.label}</span>
+                                      {option.description && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {option.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1038,37 +1076,27 @@ export function Calculator() {
                               <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
                               <InfoTooltip content="Your training background helps tailor muscle gain goals and protein needs. Beginners often benefit from a slightly higher surplus. Recommended if building muscle or body fat % is provided." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
+                            <Select onValueChange={field.onChange} value={field.value || "none"}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your training experience" />
+                                  <SelectValue placeholder="Select your training experience">
+                                    {watchTrainingExperience ? trainingExperienceOptions.find(option => option.value === watchTrainingExperience)?.label : "Select your training experience"}
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="none">
-                                  <div className="flex flex-col">
-                                    <span>None</span>
-                                    <span className="text-xs text-muted-foreground">No consistent strength training</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="beginner">
-                                  <div className="flex flex-col">
-                                    <span>Beginner (&lt;1 year)</span>
-                                    <span className="text-xs text-muted-foreground">Less than 1 year consistent training</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="intermediate">
-                                  <div className="flex flex-col">
-                                    <span>Intermediate (1-3 years)</span>
-                                    <span className="text-xs text-muted-foreground">1-3 years consistent training</span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="advanced">
-                                  <div className="flex flex-col">
-                                    <span>Advanced (3+ years)</span>
-                                    <span className="text-xs text-muted-foreground">3+ years consistent training</span>
-                                  </div>
-                                </SelectItem>
+                                {trainingExperienceOptions.map((option) => (
+                                   <SelectItem key={option.value} value={option.value}>
+                                    <div className="flex flex-col">
+                                      <span>{option.label}</span>
+                                      {option.description && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {option.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1097,79 +1125,30 @@ export function Calculator() {
                           <FormItem>
                             <FormLabel className="text-base font-medium flex items-center">
                               Primary Goal
+                              <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Select the main objective for your nutrition plan. This determines whether you aim for a calorie deficit, surplus, or maintenance." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your primary goal" />
+                                  <SelectValue placeholder="Select your primary goal">
+                                     {watchGoalSelection ? goalOptions.find(option => option.value === watchGoalSelection)?.label : "Select your primary goal"}
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="lose_fat">
-                                  <div className="flex flex-col">
-                                    <span>Lose Fat</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Creates an energy deficit to promote fat loss while preserving muscle mass
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="build_muscle">
-                                  <div className="flex flex-col">
-                                    <span>Build Lean Muscle</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Provides extra energy needed for muscle repair and growth with minimal fat gain
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="maintain">
-                                  <div className="flex flex-col">
-                                    <span>Maintain Current Weight</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Balances energy intake with expenditure for weight stability
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="clean_bulk">
-                                  <div className="flex flex-col">
-                                    <span>Clean Bulk</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Moderate surplus focused on quality nutrition for muscle gain with minimal fat
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="aggressive_bulk">
-                                  <div className="flex flex-col">
-                                    <span>Aggressive Bulk</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Larger surplus to maximize muscle growth, accepting some fat gain
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="gain_weight">
-                                  <div className="flex flex-col">
-                                    <span>Gain Weight</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      For healthy weight gain when underweight or looking to increase overall mass
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="improve_health">
-                                  <div className="flex flex-col">
-                                    <span>Improve Overall Health</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Focuses on nutrient-dense foods and balanced macros rather than weight change
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                                <SelectItem value="recomposition">
-                                  <div className="flex flex-col">
-                                    <span>Body Recomposition</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Aims to build muscle and lose fat simultaneously with high protein and training
-                                    </span>
-                                  </div>
-                                </SelectItem>
+                                {goalOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    <div className="flex flex-col">
+                                      <span>{option.label}</span>
+                                      {option.description && (
+                                        <span className="text-xs text-muted-foreground">
+                                          {option.description}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1224,35 +1203,27 @@ export function Calculator() {
                                   Desired Rate of Loss
                                   <InfoTooltip content="Select how quickly you aim to lose weight. Slower rates (0.5%) better preserve muscle, while faster rates (1%) require more diligence. Moderate (0.75%) is a common balance." />
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value || "moderate"}>
+                                <Select onValueChange={field.onChange} value={field.value || "moderate"}>
                                   <FormControl>
                                     <SelectTrigger className="mt-1">
-                                      <SelectValue placeholder="Select your desired rate" />
+                                      <SelectValue placeholder="Select your desired rate">
+                                        {watchWeightLossRate ? weightLossRateOptions.find(option => option.value === watchWeightLossRate)?.label : "Select your desired rate"}
+                                      </SelectValue>
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="slow">
-                                      <div className="flex flex-col">
-                                        <span>Slow (~0.5% of body weight/week)</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          Gradual, sustainable approach
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="moderate">
-                                      <div className="flex flex-col">
-                                        <span>Moderate (~0.75% of body weight/week)</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          Balanced approach to fat loss
-                                        </span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="fast">
-                                      <div className="flex flex-col">
-                                        <span>Fast (~1% of body weight/week)</span>
-                                        <span className="text-xs text-muted-foreground">More aggressive approach</span>
-                                      </div>
-                                    </SelectItem>
+                                    {weightLossRateOptions.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        <div className="flex flex-col">
+                                          <span>{option.label}</span>
+                                          {option.description && (
+                                            <span className="text-xs text-muted-foreground">
+                                              {option.description}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -1308,27 +1279,27 @@ export function Calculator() {
                                   Desired Rate of Gain
                                   <InfoTooltip content="Select how quickly you aim to gain weight. Slower rates (~0.25kg/wk) minimize fat gain, while moderate rates (~0.5kg/wk) may be faster but include more fat." />
                                 </FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value || "slow"}>
+                                <Select onValueChange={field.onChange} value={field.value || "slow"}>
                                   <FormControl>
                                     <SelectTrigger className="mt-1">
-                                      <SelectValue placeholder="Select your desired rate" />
+                                      <SelectValue placeholder="Select your desired rate">
+                                        {watchWeightGainRate ? weightGainRateOptions.find(option => option.value === watchWeightGainRate)?.label : "Select your desired rate"}
+                                      </SelectValue>
                                     </SelectTrigger>
                                   </FormControl>
                                   <SelectContent>
-                                    <SelectItem value="slow">
-                                      <div className="flex flex-col">
-                                        <span>Slow (~0.25kg/week)</span>
-                                        <span className="text-xs text-muted-foreground">Minimize fat gain</span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="moderate">
-                                      <div className="flex flex-col">
-                                        <span>Moderate (~0.5kg/week)</span>
-                                        <span className="text-xs text-muted-foreground">
-                                          Balanced approach to weight gain
-                                        </span>
-                                      </div>
-                                    </SelectItem>
+                                    {weightGainRateOptions.map((option) => (
+                                      <SelectItem key={option.value} value={option.value}>
+                                        <div className="flex flex-col">
+                                          <span>{option.label}</span>
+                                          {option.description && (
+                                            <span className="text-xs text-muted-foreground">
+                                              {option.description}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -1362,16 +1333,18 @@ export function Calculator() {
                               <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
                               <InfoTooltip content="Select your dietary pattern. This helps adjust protein quality considerations (e.g., slightly higher targets for vegan/vegetarian)." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your diet type" />
+                                  <SelectValue placeholder="Select your diet type">
+                                    {watchDietType ? dietTypeOptions.find(option => option.value === watchDietType)?.label : "Select your diet type"}
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="standard">Standard (Omnivore)</SelectItem>
-                                <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                                <SelectItem value="vegan">Vegan</SelectItem>
+                                {dietTypeOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1393,23 +1366,18 @@ export function Calculator() {
                               <FormDescription className="mb-2">
                                 Select if comfortable; used only for potential minor BMR refinement if body fat % is unknown.
                               </FormDescription>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select your ethnicity (optional)" />
+                                    <SelectValue placeholder="Select your ethnicity (optional)">
+                                      {watchEthnicity ? ethnicityOptions.find(option => option.value === watchEthnicity)?.label : "Select your ethnicity (optional)"}
+                                    </SelectValue>
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="default">Prefer not to say</SelectItem>
-                                  <SelectItem value="caucasian">White/European Descent</SelectItem>
-                                  <SelectItem value="african">Black/African Descent</SelectItem>
-                                  <SelectItem value="east_asian">East Asian Descent</SelectItem>
-                                  <SelectItem value="south_asian">South Asian Descent</SelectItem>
-                                  <SelectItem value="hispanic">Hispanic/Latino</SelectItem>
-                                  <SelectItem value="indigenous">Indigenous/Native Peoples</SelectItem>
-                                  <SelectItem value="middle_eastern">Middle Eastern/North African</SelectItem>
-                                  <SelectItem value="nordic">Nordic/Northern European</SelectItem>
-                                  <SelectItem value="mixed">Mixed/Multiracial</SelectItem>
+                                  {ethnicityOptions.map((option) => (
+                                     <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
