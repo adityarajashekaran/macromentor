@@ -3,13 +3,14 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { MotionProvider } from "@/components/animations/motion-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MacroMentor - Personalized Nutrition Calculator",
-  description: "Hyper-personalized calorie and macronutrient calculator based on metabolic science",
-    generator: 'v0.dev'
+  title: "MacroMentor - Advanced Nutrition Calculator",
+  description: "Calculate your personalized calorie and macronutrient needs based on your body composition, activity level, and goals.",
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -20,7 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider defaultTheme="system">{children}</ThemeProvider>
+        <ThemeProvider defaultTheme="system" storageKey="macromentor-theme">
+          <MotionProvider>
+            {children}
+          </MotionProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
