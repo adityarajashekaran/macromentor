@@ -561,7 +561,7 @@ export function Calculator() {
   // Render step indicators
   const renderStepIndicators = () => {
     return (
-      <div className="flex items-center justify-between mb-6 px-2">
+      <div className="flex flex-wrap items-center justify-center md:justify-between gap-4 md:gap-0 mb-6 px-2">
         {stepInfo.map((info, index) => {
           const stepNumber = index + 1
           const isActive = step === stepNumber
@@ -584,7 +584,8 @@ export function Calculator() {
               >
                 {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : info.icon}
               </div>
-              <span className={`text-xs font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+              <span
+                className={`text-xs text-center font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>
                 {info.title}
               </span>
             </div>
@@ -640,7 +641,7 @@ export function Calculator() {
             </div>
             {step <= totalSteps && (
               <Badge variant="outline" className="bg-background">
-                Step {step} of {totalSteps}
+                ({step}/{totalSteps})
               </Badge>
             )}
           </div>
