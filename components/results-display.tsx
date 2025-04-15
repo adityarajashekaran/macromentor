@@ -1,5 +1,5 @@
 "use client"
-import { Check, Info, ArrowRight, Flame, Dumbbell, Apple, Utensils, Printer, Copy } from "lucide-react"
+import { Check, Info, ArrowRight, Flame, Dumbbell, Apple, Utensils, Printer } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator"
 import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 import { DonutChart } from "@tremor/react"
 
 // Define the props interface
@@ -163,28 +162,6 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
     window.print()
   }
 
-  // Function to copy summary to clipboard
-  const handleCopySummary = () => {
-    const summary = `MacroMentor Results Summary:
-Goal: ${formatGoal(results.userProfile.goal)} (${results.goalDescription})
-Target Calories: ${results.calorieTarget} kcal (TDEE: ${results.tdee} kcal, Deficit/Surplus: ${results.deficitSurplus} kcal)
-Macros:
-  - Protein: ${results.macros.protein.grams}g (${results.macros.protein.percentage}%)
-  - Carbs: ${results.macros.carbs.grams}g (${results.macros.carbs.percentage}%)
-  - Fat: ${results.macros.fat.grams}g (${results.macros.fat.percentage}%)
-BMR: ${results.bmr} kcal (${results.bmrMethod})
-`
-    navigator.clipboard
-      .writeText(summary)
-      .then(() => {
-        toast.success("Summary copied to clipboard!")
-      })
-      .catch((err) => {
-        console.error("Failed to copy summary: ", err)
-        toast.error("Failed to copy summary.")
-      })
-  }
-
   return (
     <div className="p-6">
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
@@ -196,9 +173,6 @@ BMR: ${results.bmr} kcal (${results.bmrMethod})
               <p className="text-muted-foreground mt-1">{results.goalDescription}</p>
             </div>
             <div className="flex items-center gap-2 mt-4 md:mt-0">
-              <Button variant="outline" size="sm" onClick={handleCopySummary}>
-                <Copy className="h-4 w-4 mr-2" /> Copy Summary
-              </Button>
               <Button variant="outline" size="sm" onClick={handlePrint}>
                 <Printer className="h-4 w-4 mr-2" /> Print Results
               </Button>

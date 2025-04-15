@@ -751,24 +751,25 @@ export function Calculator() {
   return (
     <div className="w-full max-w-5xl mx-auto">
       <Card className="w-full shadow-xl border overflow-hidden">
-        <CardHeader className="bg-muted/50 border-b">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
-                {step <= totalSteps ? "Advanced Nutrition Calculator" : "Your Personalized Plan"}
-              </CardTitle>
-              <CardDescription className="text-muted-foreground mt-1">
-                {step <= totalSteps ? stepInfo[step - 1].description : "Tailored to your unique profile and goals"}
-              </CardDescription>
-            </div>
-            {step <= totalSteps && (
+        {/* Conditionally render CardHeader only for form steps */}
+        {step <= totalSteps && (
+          <CardHeader className="bg-muted/50 border-b">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-2xl font-bold text-foreground tracking-tight">
+                  Advanced Nutrition Calculator
+                </CardTitle>
+                <CardDescription className="text-muted-foreground mt-1">
+                  {stepInfo[step - 1].description}
+                </CardDescription>
+              </div>
               <Badge variant="outline" className="bg-background">
                 ({step}/{totalSteps})
               </Badge>
-            )}
-          </div>
-          {step <= totalSteps && renderStepIndicator()}
-        </CardHeader>
+            </div>
+            {renderStepIndicator()}
+          </CardHeader>
+        )}
         <CardContent className="p-0">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit as SubmitHandler<FieldValues>)} className="space-y-6">
