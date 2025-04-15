@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "NutriTrack Pro - Advanced Nutrition Calculator",
-  description: "Advanced nutrition calculator powered by cutting-edge metabolic science",
+  title: "MacroMentor - Personalized Nutrition Calculator",
+  description: "Hyper-personalized calorie and macronutrient calculator based on metabolic science",
     generator: 'v0.dev'
 }
 

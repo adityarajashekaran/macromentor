@@ -1,8 +1,8 @@
-# NutriTrack Pro - Planning Document
+# MacroMentor - Planning Document
 
 ## 1. Application Summary
 
-NutriTrack Pro is an advanced, hyper-personalized web application designed to calculate calorie and macronutrient needs. It leverages detailed user input and foundational metabolic science, including recent research on individual variations, to provide tailored nutritional guidance.
+MacroMentor is an advanced, hyper-personalized web application designed to calculate calorie and macronutrient needs. It leverages detailed user input and foundational metabolic science, including recent research on individual variations, to provide tailored nutritional guidance.
 
 The core philosophy emphasizes:
 *   **Hyper-Personalization:** Incorporating detailed user data (age, sex, height, weight, activity, body fat %, training experience, diet type, etc.) for accurate calculations.
@@ -38,7 +38,6 @@ The application serves as an informational tool and does not replace professiona
     *   Macronutrient breakdown (grams, calories, percentage) with visualizations (pie chart, progress bars).
     *   Body Metrics (BMI, LBM if BF% provided).
     *   Micronutrient targets and food source examples.
-    *   Personalized recommendations (meal timing, hydration, reassessment, fiber, food quality).
     *   Warnings and disclaimers.
 *   **Theming:** Light/Dark mode support.
 

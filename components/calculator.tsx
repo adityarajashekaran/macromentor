@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, SubmitHandler } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User } from "lucide-react"
+import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 
 // Import both default and named export to ensure compatibility
@@ -28,7 +28,10 @@ const formSchema = z.object({
   weight: z.coerce.number().min(30).max(300),
 
   // Step 2: Body Composition & Activity
-  bodyFat: z.coerce.number().min(3).max(60).optional(),
+  bodyFat: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number().min(3).max(60).optional()
+  ),
   hasBodyFat: z.boolean().default(false),
   activityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"]),
   exerciseFrequency: z.enum(["none", "light", "moderate", "intense"]).optional(),
@@ -45,7 +48,10 @@ const formSchema = z.object({
     "improve_health",
     "recomposition",
   ]),
-  targetWeight: z.coerce.number().min(30).max(300).optional(),
+  targetWeight: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number().min(30).max(300).optional()
+  ),
   weightLossRate: z.enum(["slow", "moderate", "fast"]).optional(),
   weightGainRate: z.enum(["slow", "moderate"]).optional(),
 
@@ -66,8 +72,14 @@ const formSchema = z.object({
     ])
     .default("default"),
   hasNeckWaist: z.boolean().default(false),
-  neckCircumference: z.coerce.number().min(20).max(80).optional(),
-  waistCircumference: z.coerce.number().min(50).max(200).optional(),
+  neckCircumference: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number().min(20).max(80).optional()
+  ),
+  waistCircumference: z.preprocess(
+    (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+    z.number().min(50).max(200).optional()
+  ),
 })
 
 type CalculatorFormValues = z.infer<typeof formSchema>
@@ -87,6 +99,13 @@ const stepInfo = [
   { icon: <Settings className="h-5 w-5" />, title: "Advanced", description: "Fine-tune your plan" },
 ]
 
+const stepFields: Record<number, (keyof CalculatorFormValues)[]> = {
+  1: ["sex", "age", "height", "weight"],
+  2: ["activityLevel", "hasBodyFat", "bodyFat", "exerciseFrequency", "trainingExperience"],
+  3: ["goal", "targetWeight", "weightLossRate", "weightGainRate"],
+  4: ["dietType", "ethnicity", "hasNeckWaist", "neckCircumference", "waistCircumference"],
+}
+
 export function Calculator() {
   console.log("Calculator component rendering")
 
@@ -101,33 +120,39 @@ export function Calculator() {
   }, [])
 
   const defaultValues: Partial<CalculatorFormValues> = {
-    sex: "male",
+    bodyFat: undefined,
     hasBodyFat: false,
-    activityLevel: "moderate",
     exerciseFrequency: "none",
     trainingExperience: "none",
-    goal: "lose_fat",
+    targetWeight: undefined,
+    weightLossRate: "moderate",
+    weightGainRate: "slow",
     dietType: "standard",
     ethnicity: "default",
     hasNeckWaist: false,
-    // Add default values for optional fields
-    weightLossRate: "moderate",
-    weightGainRate: "slow",
+    neckCircumference: undefined,
+    waistCircumference: undefined,
   }
 
   const form = useForm<CalculatorFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver<CalculatorFormValues>(formSchema),
     defaultValues,
+    mode: "onChange",
   })
 
   const watchHasBodyFat = form.watch("hasBodyFat")
   const watchGoal = form.watch("goal")
   const watchHasNeckWaist = form.watch("hasNeckWaist")
 
-  function nextStep() {
-    if (step < totalSteps) {
+  async function nextStep() {
+    const fieldsToValidate = stepFields[step]
+    // Trigger validation for fields in the current step
+    const isValid = await form.trigger(fieldsToValidate)
+
+    if (isValid && step < totalSteps) {
       setStep(step + 1)
     }
+     // If not valid, errors will be displayed automatically by FormMessage components
   }
 
   function prevStep() {
@@ -136,7 +161,7 @@ export function Calculator() {
     }
   }
 
-  function onSubmit(data: CalculatorFormValues) {
+  const onSubmit: SubmitHandler<CalculatorFormValues> = (data) => {
     console.log("Form submitted with data:", data)
 
     // Reset ethnicity adjustment flag
@@ -558,42 +583,50 @@ export function Calculator() {
     setStep(totalSteps + 1) // Move to results step
   }
 
-  // Render step indicators
-  const renderStepIndicators = () => {
-    return (
-      <div className="flex flex-wrap items-center justify-center md:justify-between gap-4 md:gap-0 mb-6 px-2">
-        {stepInfo.map((info, index) => {
-          const stepNumber = index + 1
-          const isActive = step === stepNumber
-          const isCompleted = step > stepNumber
+  // Helper component for inline Info displays (using Popover for click/tap)
+  const InfoTooltip = ({ content }: { content: string }) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        {/* Set type='button' to prevent form submission */}
+        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 ml-1 cursor-help">
+          <Info className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 text-sm">
+        <p>{content}</p>
+      </PopoverContent>
+    </Popover>
+  )
 
-          return (
-            <div key={stepNumber} className="flex flex-col items-center">
-              <div
-                className={`
-                  flex items-center justify-center w-10 h-10 rounded-full 
-                  transition-all duration-300 mb-1
-                  ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : isCompleted
-                        ? "bg-primary/20 text-primary"
-                        : "bg-muted text-muted-foreground"
-                  }
-                `}
-              >
-                {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : info.icon}
-              </div>
-              <span
-                className={`text-xs text-center font-medium ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                {info.title}
-              </span>
+  // Step Indicator Component
+  const renderStepIndicator = () => (
+    <div className="mb-8 flex justify-center space-x-4 border-b pb-4">
+      {stepInfo.map((info, index) => {
+        const currentStepIndex = step - 1
+        const isCompleted = index < currentStepIndex
+        const isCurrent = index === currentStepIndex
+
+        return (
+          <div key={index} className="flex flex-col items-center text-center">
+            <div
+              className={`flex items-center justify-center h-10 w-10 rounded-full border-2 ${
+                isCurrent
+                  ? "border-primary bg-primary/10 text-primary"
+                  : isCompleted
+                  ? "border-green-500 bg-green-500/10 text-green-600"
+                  : "border-border bg-card text-muted-foreground"
+              }`}
+            >
+              {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : info.icon}
             </div>
-          )
-        })}
-      </div>
-    )
-  }
+            <p className={`mt-2 text-xs font-medium ${isCurrent ? "text-primary" : "text-muted-foreground"}`}>
+              {info.title}
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   // Render results directly if ResultsDisplay is not available
   const renderResults = () => {
@@ -645,7 +678,7 @@ export function Calculator() {
               </Badge>
             )}
           </div>
-          {step <= totalSteps && renderStepIndicators()}
+          {step <= totalSteps && renderStepIndicator()}
         </CardHeader>
         <CardContent className="p-0">
           <Form {...form}>
@@ -667,16 +700,16 @@ export function Calculator() {
                         name="sex"
                         render={({ field }) => (
                           <FormItem className="space-y-1">
-                            <FormLabel className="text-base font-medium">Sex Assigned at Birth</FormLabel>
+                            <FormLabel className="flex items-center">
+                              Sex Assigned at Birth
+                              <InfoTooltip content="Biological sex influences factors like hormone levels and typical body composition (muscle vs. fat mass), which affect baseline metabolism. We use this for selecting the base formula constant." />
+                            </FormLabel>
                             <FormDescription>
-                              Used to calculate your base metabolic rate and nutrient needs. Biological sex influences
-                              factors like hormone levels and typical body composition, which affect baseline
-                              metabolism.
+                              Used for BMR calculation constant. Select the option that best applies.
                             </FormDescription>
                             <div className="pt-2">
                               <RadioGroup
                                 onValueChange={field.onChange}
-                                defaultValue={field.value}
                                 className="flex flex-col sm:flex-row gap-4"
                               >
                                 <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
@@ -711,15 +744,14 @@ export function Calculator() {
                         name="age"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Age (years)</FormLabel>
-                            <FormDescription>
-                              Your age influences your baseline metabolism. Metabolic rate generally decreases slightly
-                              with age, primarily due to changes in body composition.
-                            </FormDescription>
+                            <FormLabel className="flex items-center">
+                              Age (Years)
+                              <InfoTooltip content="Your age influences your baseline metabolism (the calories your body burns at rest). Metabolic rate generally decreases slightly with age." />
+                            </FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
-                                placeholder="30"
+                                placeholder="Enter your age"
                                 className="mt-1"
                                 {...field}
                                 value={field.value === undefined ? "" : field.value}
@@ -740,15 +772,14 @@ export function Calculator() {
                           name="height"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-medium">Height (cm)</FormLabel>
-                              <FormDescription>
-                                Height is a key factor in determining your body size, which influences your energy
-                                needs.
-                              </FormDescription>
+                              <FormLabel className="flex items-center">
+                                Height (cm)
+                                <InfoTooltip content="Height is a key factor in determining your body size, which influences your energy needs." />
+                              </FormLabel>
                               <FormControl>
                                 <Input
                                   type="number"
-                                  placeholder="175"
+                                  placeholder="Enter height in cm"
                                   className="mt-1"
                                   {...field}
                                   value={field.value === undefined ? "" : field.value}
@@ -768,15 +799,14 @@ export function Calculator() {
                           name="weight"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-base font-medium">Weight (kg)</FormLabel>
-                              <FormDescription>
-                                Your current weight is the primary factor used to estimate your calorie needs. We'll
-                                also use it to calculate targets for goals like weight loss or gain.
-                              </FormDescription>
+                              <FormLabel className="flex items-center">
+                                Weight (kg)
+                                <InfoTooltip content="Your current weight is the primary factor used to estimate your calorie needs and calculate goal-based adjustments." />
+                              </FormLabel>
                               <FormControl>
                                 <Input
                                   type="number"
-                                  placeholder="70"
+                                  placeholder="Enter weight in kg"
                                   className="mt-1"
                                   {...field}
                                   value={field.value === undefined ? "" : field.value}
@@ -813,25 +843,14 @@ export function Calculator() {
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
                             <div className="space-y-0.5">
                               <div className="flex items-center">
-                                <FormLabel className="text-base font-medium mr-2">
-                                  Do you know your body fat percentage?
+                                <FormLabel className="text-base font-medium mr-1">
+                                  Do you know your body fat %?
                                 </FormLabel>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-sm">
-                                      <p>
-                                        Body fat percentage allows for more accurate calculations based on your lean
-                                        body mass (muscle, organs, bone) rather than just total weight.
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                                <Badge variant="outline" className="text-xs">Optional</Badge>
+                                <InfoTooltip content="Providing body fat % allows for more accurate metabolism calculations (using Katch-McArdle or Cunningham formulas) based on lean body mass, especially beneficial if very lean or muscular." />
                               </div>
                               <FormDescription>
-                                This will significantly improve the accuracy of your calculations
+                                Improves calculation accuracy. Obtain via scales, calipers, scans.
                               </FormDescription>
                             </div>
                             <FormControl>
@@ -857,12 +876,17 @@ export function Calculator() {
                             name="bodyFat"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Body Fat Percentage (%)</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Body Fat Percentage (%)
+                                  <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                  <InfoTooltip content="Enter your estimated body fat percentage. Accuracy varies by method." />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
                                     placeholder="15"
                                     className="mt-1"
+                                    step="0.1"
                                     {...field}
                                     value={field.value === undefined ? "" : field.value}
                                     onChange={(e) => {
@@ -872,10 +896,6 @@ export function Calculator() {
                                     }}
                                   />
                                 </FormControl>
-                                <FormDescription>
-                                  Enter a value between 3-60%. This can be measured using calipers, bioelectrical
-                                  impedance scales, or DEXA scans.
-                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -888,12 +908,11 @@ export function Calculator() {
                         name="activityLevel"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Daily Activity Level (Non-Exercise)</FormLabel>
-                            <FormDescription>
-                              This refers to your typical daily movement outside of planned exercise. Your daily
-                              activity level significantly impacts your total calorie needs.
-                            </FormDescription>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel className="text-base font-medium flex items-center">
+                              Daily Activity Level (Non-Exercise)
+                              <InfoTooltip content="Select the level that best describes your typical daily activity, including your job and leisure time *outside* of planned exercise. This helps estimate calories burned through daily movement (NEAT)." />
+                            </FormLabel>
+                            <Select onValueChange={field.onChange}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="Select your activity level" />
@@ -904,27 +923,31 @@ export function Calculator() {
                                   <div className="flex flex-col">
                                     <span>Sedentary</span>
                                     <span className="text-xs text-muted-foreground">
-                                      Little or no daily movement, desk job
+                                      Desk job, little movement
                                     </span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="light">
                                   <div className="flex flex-col">
                                     <span>Lightly Active</span>
-                                    <span className="text-xs text-muted-foreground">Light walking, standing job</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      Light manual work, some walking
+                                    </span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="moderate">
                                   <div className="flex flex-col">
                                     <span>Moderately Active</span>
-                                    <span className="text-xs text-muted-foreground">Regular walking, active job</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      Most trades, active job, regular walking
+                                    </span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="very">
                                   <div className="flex flex-col">
                                     <span>Very Active</span>
                                     <span className="text-xs text-muted-foreground">
-                                      Physically demanding job or lifestyle
+                                      Heavy manual labor, very active day
                                     </span>
                                   </div>
                                 </SelectItem>
@@ -932,7 +955,7 @@ export function Calculator() {
                                   <div className="flex flex-col">
                                     <span>Extra Active</span>
                                     <span className="text-xs text-muted-foreground">
-                                      Heavy manual labor or very active lifestyle
+                                      Intense daily exercise + physical job
                                     </span>
                                   </div>
                                 </SelectItem>
@@ -948,12 +971,12 @@ export function Calculator() {
                         name="exerciseFrequency"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Planned Exercise Frequency</FormLabel>
-                            <FormDescription>
-                              This refers to structured workouts like gym sessions, running, or sports. This helps us
-                              refine your total daily calorie estimate.
-                            </FormDescription>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel className="text-base font-medium flex items-center">
+                              Planned Exercise
+                              <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                              <InfoTooltip content="Tell us about your structured workouts (gym, running, sports). This refines your TDEE by adding Exercise Activity Thermogenesis (EAT). Recommended for better accuracy." />
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="Select your exercise frequency" />
@@ -968,22 +991,20 @@ export function Calculator() {
                                 </SelectItem>
                                 <SelectItem value="light">
                                   <div className="flex flex-col">
-                                    <span>Light</span>
-                                    <span className="text-xs text-muted-foreground">1-2 days/week, low intensity</span>
+                                    <span>Light (1-2 days/wk)</span>
+                                    <span className="text-xs text-muted-foreground">Low intensity workouts</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="moderate">
                                   <div className="flex flex-col">
-                                    <span>Moderate</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      3-4 days/week, moderate intensity
-                                    </span>
+                                    <span>Moderate (3-4 days/wk)</span>
+                                    <span className="text-xs text-muted-foreground">Moderate intensity workouts</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="intense">
                                   <div className="flex flex-col">
-                                    <span>Intense</span>
-                                    <span className="text-xs text-muted-foreground">5+ days/week, high intensity</span>
+                                    <span>Intense (5+ days/wk)</span>
+                                    <span className="text-xs text-muted-foreground">High intensity workouts</span>
                                   </div>
                                 </SelectItem>
                               </SelectContent>
@@ -998,13 +1019,12 @@ export function Calculator() {
                         name="trainingExperience"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Strength Training Experience</FormLabel>
-                            <FormDescription>
-                              Your training experience helps us tailor muscle gain goals and protein recommendations.
-                              Beginners typically can build muscle faster and may benefit from a slightly higher
-                              surplus.
-                            </FormDescription>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel className="text-base font-medium flex items-center">
+                              Strength Training Experience
+                              <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                              <InfoTooltip content="Your training background helps tailor muscle gain goals and protein needs. Beginners often benefit from a slightly higher surplus. Recommended if building muscle or body fat % is provided." />
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value || "none"}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="Select your training experience" />
@@ -1014,33 +1034,25 @@ export function Calculator() {
                                 <SelectItem value="none">
                                   <div className="flex flex-col">
                                     <span>None</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      No strength training experience
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">No consistent strength training</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="beginner">
                                   <div className="flex flex-col">
-                                    <span>Beginner</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      Less than 1 year of consistent training
-                                    </span>
+                                    <span>Beginner (&lt;1 year)</span>
+                                    <span className="text-xs text-muted-foreground">Less than 1 year consistent training</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="intermediate">
                                   <div className="flex flex-col">
-                                    <span>Intermediate</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      1-3 years of consistent training
-                                    </span>
+                                    <span>Intermediate (1-3 years)</span>
+                                    <span className="text-xs text-muted-foreground">1-3 years consistent training</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="advanced">
                                   <div className="flex flex-col">
-                                    <span>Advanced</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      3+ years of consistent training
-                                    </span>
+                                    <span>Advanced (3+ years)</span>
+                                    <span className="text-xs text-muted-foreground">3+ years consistent training</span>
                                   </div>
                                 </SelectItem>
                               </SelectContent>
@@ -1069,8 +1081,11 @@ export function Calculator() {
                         name="goal"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Primary Goal</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel className="text-base font-medium flex items-center">
+                              Primary Goal
+                              <InfoTooltip content="Select the main objective for your nutrition plan. This determines whether you aim for a calorie deficit, surplus, or maintenance." />
+                            </FormLabel>
+                            <Select onValueChange={field.onChange}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
                                   <SelectValue placeholder="Select your primary goal" />
@@ -1155,14 +1170,18 @@ export function Calculator() {
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="space-y-6"
+                          className="space-y-6 border p-4 rounded-lg bg-muted/30"
                         >
                           <FormField
                             control={form.control}
                             name="targetWeight"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Target Weight (kg)</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Target Weight (kg)
+                                  <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                  <InfoTooltip content="Setting a target weight helps visualize progress but doesn't change the calorie calculation, which is based on the desired rate of loss." />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
@@ -1187,7 +1206,10 @@ export function Calculator() {
                             name="weightLossRate"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Desired Rate of Loss</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Desired Rate of Loss
+                                  <InfoTooltip content="Select how quickly you aim to lose weight. Slower rates (0.5%) better preserve muscle, while faster rates (1%) require more diligence. Moderate (0.75%) is a common balance." />
+                                </FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value || "moderate"}>
                                   <FormControl>
                                     <SelectTrigger className="mt-1">
@@ -1219,9 +1241,6 @@ export function Calculator() {
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
-                                <FormDescription>
-                                  Choose a rate that feels sustainable for your lifestyle
-                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -1235,14 +1254,18 @@ export function Calculator() {
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.3 }}
-                          className="space-y-6"
+                          className="space-y-6 border p-4 rounded-lg bg-muted/30"
                         >
                           <FormField
                             control={form.control}
                             name="targetWeight"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Target Weight (kg)</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Target Weight (kg)
+                                  <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                  <InfoTooltip content="Setting a target weight helps visualize progress but doesn't change the calorie calculation, which is based on the desired rate of gain." />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
@@ -1267,7 +1290,10 @@ export function Calculator() {
                             name="weightGainRate"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Desired Rate of Gain</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Desired Rate of Gain
+                                  <InfoTooltip content="Select how quickly you aim to gain weight. Slower rates (~0.25kg/wk) minimize fat gain, while moderate rates (~0.5kg/wk) may be faster but include more fat." />
+                                </FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value || "slow"}>
                                   <FormControl>
                                     <SelectTrigger className="mt-1">
@@ -1317,7 +1343,11 @@ export function Calculator() {
                         name="dietType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-base font-medium">Diet Type</FormLabel>
+                            <FormLabel className="text-base font-medium flex items-center">
+                              Diet Type
+                              <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                              <InfoTooltip content="Select your dietary pattern. This helps adjust protein quality considerations (e.g., slightly higher targets for vegan/vegetarian)." />
+                            </FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="mt-1">
@@ -1330,9 +1360,6 @@ export function Calculator() {
                                 <SelectItem value="vegan">Vegan</SelectItem>
                               </SelectContent>
                             </Select>
-                            <FormDescription>
-                              This helps adjust protein recommendations based on your diet
-                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -1344,30 +1371,17 @@ export function Calculator() {
                           name="ethnicity"
                           render={({ field }) => (
                             <FormItem>
-                              <div className="flex items-center">
-                                <FormLabel className="text-base font-medium mr-2">Ethnicity (Optional)</FormLabel>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-md">
-                                      <p>
-                                        Providing your ethnicity is completely optional. Race and ethnicity are social
-                                        constructs, not precise biological categories. However, large population studies
-                                        sometimes show average differences in metabolic rates between groups. If you
-                                        choose to provide this information, we may apply a small statistical adjustment
-                                        to your initial metabolic rate estimate only if more precise data like body fat
-                                        percentage is unavailable. This aims to slightly refine the estimate but has
-                                        limitations, as individual metabolism varies greatly within any group.
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
+                              <div className="flex items-center mb-1">
+                                <FormLabel className="text-base font-medium mr-1">Ethnicity</FormLabel>
+                                <Badge variant="outline" className="text-xs">Optional</Badge>
+                                <InfoTooltip content="Optional refinement: Population studies sometimes show average metabolic differences. If provided (and body fat % is NOT), a minor statistical adjustment might be applied. See detailed disclaimer in tooltip/planning docs." />
                               </div>
+                              <FormDescription className="mb-2">
+                                Select if comfortable; used only for potential minor BMR refinement if body fat % is unknown.
+                              </FormDescription>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger className="mt-1">
+                                  <SelectTrigger>
                                     <SelectValue placeholder="Select your ethnicity (optional)" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -1396,13 +1410,13 @@ export function Calculator() {
                         render={({ field }) => (
                           <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
                             <div className="space-y-0.5">
-                              <FormLabel className="text-base font-medium">
-                                Do you know your neck and waist measurements?
+                              <FormLabel className="text-base font-medium flex items-center">
+                                Neck & Waist Measurements?
+                                <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                <InfoTooltip content="Measuring waist circumference helps assess abdominal fat, linked to health risks. Doesn't change calorie goal but may trigger health tips (e.g., fiber, omega-3)." />
                               </FormLabel>
                               <FormDescription>
-                                Measuring your waist circumference can help assess abdominal fat levels, which are
-                                linked to health risks. This doesn't change your calorie goal but may trigger specific
-                                dietary recommendations.
+                                Provide if known; helps assess health risks.
                               </FormDescription>
                             </div>
                             <FormControl>
@@ -1429,12 +1443,17 @@ export function Calculator() {
                             name="neckCircumference"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Neck Circumference (cm)</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Neck Circumference (cm)
+                                  <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                  <InfoTooltip content="Measure around the narrowest part of your neck." />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
                                     placeholder="35"
                                     className="mt-1"
+                                    step="0.1"
                                     {...field}
                                     value={field.value === undefined ? "" : field.value}
                                     onChange={(e) => {
@@ -1454,12 +1473,17 @@ export function Calculator() {
                             name="waistCircumference"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-base font-medium">Waist Circumference (cm)</FormLabel>
+                                <FormLabel className="text-base font-medium flex items-center">
+                                  Waist Circumference (cm)
+                                  <Badge variant="outline" className="text-xs ml-1">Optional</Badge>
+                                  <InfoTooltip content="Measure horizontally around your natural waistline (usually just above the hip bones)." />
+                                </FormLabel>
                                 <FormControl>
                                   <Input
                                     type="number"
                                     placeholder="80"
                                     className="mt-1"
+                                    step="0.1"
                                     {...field}
                                     value={field.value === undefined ? "" : field.value}
                                     onChange={(e) => {
@@ -1490,48 +1514,48 @@ export function Calculator() {
                     {renderResults()}
                   </motion.div>
                 )}
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between p-6 pt-2 border-t bg-muted/30">
-                  {step > 1 && step <= totalSteps && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={prevStep}
-                      className="transition-all hover:bg-muted"
-                    >
-                      Back
-                    </Button>
-                  )}
-
-                  {step < totalSteps && (
-                    <Button
-                      type="button"
-                      className="ml-auto bg-primary hover:opacity-90 transition-opacity"
-                      onClick={nextStep}
-                    >
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  )}
-
-                  {step === totalSteps && (
-                    <Button type="submit" className="ml-auto bg-primary hover:opacity-90 transition-opacity">
-                      Calculate Results
-                    </Button>
-                  )}
-
-                  {step > totalSteps && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setStep(1)}
-                      className="ml-auto transition-all hover:bg-muted"
-                    >
-                      Start Over
-                    </Button>
-                  )}
-                </div>
               </AnimatePresence>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between p-6 pt-2 border-t bg-muted/30">
+                {step > 1 && step <= totalSteps && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    className="transition-all hover:bg-muted"
+                  >
+                    Back
+                  </Button>
+                )}
+
+                {step < totalSteps && (
+                  <Button
+                    type="button"
+                    className="ml-auto bg-primary hover:opacity-90 transition-opacity"
+                    onClick={nextStep}
+                  >
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+
+                {step === totalSteps && (
+                  <Button type="submit" className="ml-auto bg-primary hover:opacity-90 transition-opacity">
+                    Calculate Results
+                  </Button>
+                )}
+
+                {step > totalSteps && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    className="ml-auto transition-all hover:bg-muted"
+                  >
+                    Start Over
+                  </Button>
+                )}
+              </div>
             </form>
           </Form>
         </CardContent>
