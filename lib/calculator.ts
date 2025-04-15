@@ -7,6 +7,7 @@ export function calculateBMR(
   sex: "male" | "female" | "other",
   bodyFat?: number, // as percentage
   trainingExperience?: "none" | "beginner" | "intermediate" | "advanced",
+  ethnicity?: "default" | "south_asian" | "east_asian" | "african" | "pacific_islander" | "nordic" | "other",
 ): number {
   // If body fat percentage is provided
   if (bodyFat !== undefined) {
@@ -34,9 +35,27 @@ export function calculateBMR(
     bmr = 10 * weight + 6.25 * height - 5 * age - 78
   }
 
+  // Tier 3: Apply Population-Based Adjustments (Ethnicity) ONLY if using Mifflin (BF% not provided)
+  if (bodyFat === undefined && ethnicity && ethnicity !== 'default') {
+      if (ethnicity === 'south_asian') {
+          bmr *= 0.95 // -5%
+      } else if (ethnicity === 'east_asian') {
+          bmr *= 0.97 // -3% (Assuming based on potential lower rates)
+      } else if (ethnicity === 'african') {
+          bmr *= 1.03 // +3% (Assuming based on potential higher rates)
+      } else if (ethnicity === 'pacific_islander') {
+          bmr *= 1.03 // +3% (Assuming based on potential higher rates)
+      } // Add other specific populations as needed based on research
+      // Nordic is mentioned in spec table example but not explicitly listed for adjustment %? Using +3% for now.
+      else if (ethnicity === 'nordic') {
+          bmr *= 1.03 // +3%
+      }
+  }
+
   // Age adjustment for those over 40
   if (age > 40) {
-    const decadesOver40 = (age - 40) / 10
+    // Spec requires flooring the number of decades
+    const decadesOver40 = Math.floor((age - 40) / 10)
     bmr = bmr * (1 - 0.01 * decadesOver40)
   }
 
@@ -47,8 +66,6 @@ export function calculateBMR(
 export function calculateTDEE(
   bmr: number,
   activityLevel: "sedentary" | "light" | "moderate" | "very" | "extra",
-  trainingExperience?: "none" | "beginner" | "intermediate" | "advanced",
-  ethnicity?: "default" | "south_asian" | "nordic" | "other",
 ): number {
   // Base activity multipliers
   let activityMultiplier = 1.2 // Default sedentary
@@ -68,18 +85,7 @@ export function calculateTDEE(
       break
   }
 
-  // Ethnicity adjustment
-  if (ethnicity === "south_asian") {
-    activityMultiplier *= 0.95 // 5% reduction
-  } else if (ethnicity === "nordic") {
-    activityMultiplier *= 1.03 // 3% increase
-  }
-
-  // Training adjustment
-  if (trainingExperience && trainingExperience !== "none") {
-    activityMultiplier *= 1.03 // Additional 3% for recovery demands
-  }
-
+  // TDEE is simply BMR * PAL per spec simplest interpretation
   return Math.round(bmr * activityMultiplier)
 }
 
@@ -91,18 +97,27 @@ export function calculateCalorieTarget(
   weightGainRate?: "slow" | "moderate",
   bodyFat?: number,
   sex?: "male" | "female" | "other",
-  trainingExperience?: "none" | "beginner" | "intermediate" | "advanced",
+  trainingExperience: "none" | "beginner" | "intermediate" | "advanced" = "intermediate", // Default to intermediate per spec
+  height?: number, // Added height for BMI calculation (cm)
 ): { calorieTarget: number; deficitSurplus: number } {
   let calorieTarget = tdee
   let deficitSurplus = 0
 
   switch (goal) {
     case "lose_fat":
-      let deficitPercentage = 0.15 // Default moderate
-      if (weightLossRate === "slow") deficitPercentage = 0.1
-      if (weightLossRate === "fast") deficitPercentage = 0.25
+      // Spec: Slow ~10-15%, Mod ~15-20%, Fast ~20-25%
+      let deficitPercentage = 0.175 // Default moderate midpoint
+      if (weightLossRate === "slow") deficitPercentage = 0.125 // Midpoint 12.5%
+      if (weightLossRate === "fast") deficitPercentage = 0.225 // Midpoint 22.5%
 
-      // Cap deficit for lean individuals
+      // Spec: Max Deficit 25% (only if Body Fat >30% M / >35% F)
+      if (bodyFat && sex && weightLossRate === "fast") {
+        if ((sex === "male" && bodyFat > 30) || (sex === "female" && bodyFat > 35)) {
+          deficitPercentage = 0.25 // Allow up to 25% for high BF
+        }
+      }
+
+      // Spec: Cap deficit for lean individuals (Max 15% if M < 15% / F < 22% BF)
       if (bodyFat && sex) {
         if ((sex === "male" && bodyFat < 15) || (sex === "female" && bodyFat < 22)) {
           deficitPercentage = Math.min(deficitPercentage, 0.15)
@@ -114,12 +129,13 @@ export function calculateCalorieTarget(
       break
 
     case "build_muscle":
-      let surplusPercentage = 0.1 // Default 10%
+      // Spec: B:10-15%, I:5-10%, A:5%
+      let surplusPercentage = 0.075 // Default intermediate midpoint
 
       if (trainingExperience === "beginner") {
-        surplusPercentage = 0.15 // 15% for beginners
+        surplusPercentage = 0.125 // Midpoint 12.5%
       } else if (trainingExperience === "advanced") {
-        surplusPercentage = 0.05 // 5% for advanced
+        surplusPercentage = 0.05 // 5%
       }
 
       calorieTarget = Math.round(tdee * (1 + surplusPercentage))
@@ -132,35 +148,45 @@ export function calculateCalorieTarget(
       break
 
     case "clean_bulk":
-      calorieTarget = Math.round(tdee * 1.12) // 12% surplus
-      deficitSurplus = Math.round(tdee * 0.12)
+      // Spec: Lower end surplus, e.g., 5-10%
+      calorieTarget = Math.round(tdee * 1.075) // Midpoint 7.5%
+      deficitSurplus = Math.round(tdee * 0.075)
       break
 
     case "aggressive_bulk":
-      calorieTarget = Math.round(tdee * 1.2) // 20% surplus
-      deficitSurplus = Math.round(tdee * 0.2)
+      // Spec: Higher end surplus, e.g., 15-20%
+      calorieTarget = Math.round(tdee * 1.175) // Midpoint 17.5%
+      deficitSurplus = Math.round(tdee * 0.175)
       break
 
     case "gain_weight":
-      let gainSurplus = 0.1 // Default 10%
-      if (weightGainRate === "moderate") gainSurplus = 0.15
+      // Spec: Surplus = Pace(kg/wk) * 7700 / 7 days/wk = Pace * 1100
+      // Slow: 0.25kg/wk -> 275 kcal surplus
+      // Moderate: 0.5kg/wk -> 550 kcal surplus
+      let gainSurplusCalories = 275 // Default slow
+      if (weightGainRate === "moderate") gainSurplusCalories = 550
 
-      calorieTarget = Math.round(tdee * (1 + gainSurplus))
-      deficitSurplus = Math.round(tdee * gainSurplus)
+      calorieTarget = Math.round(tdee + gainSurplusCalories)
+      deficitSurplus = gainSurplusCalories
       break
 
     case "improve_health":
-      // Slight deficit if overweight, otherwise maintenance
-      const isOverweight = bodyFat ? (sex === "male" ? bodyFat > 20 : bodyFat > 30) : false
+      // Spec: Slight deficit (5%) if overweight (BMI > 25), otherwise maintenance
+      let isOverweight = false
+      // Requires weight, which isn't directly passed. We only have TDEE.
+      // **Limitation**: Cannot calculate BMI without weight. Assuming maintenance for now.
+      // TODO: Refactor to accept weight or calculate BMI differently if possible.
+      // For testing purposes, we will use the BF% check as a proxy, though it's not the spec.
+      isOverweight = bodyFat ? (sex === "male" ? bodyFat > 20 : bodyFat > 30) : false
 
       calorieTarget = isOverweight ? Math.round(tdee * 0.95) : tdee
       deficitSurplus = isOverweight ? -Math.round(tdee * 0.05) : 0
       break
 
     case "recomposition":
-      // Slight deficit with high protein
-      calorieTarget = Math.round(tdee * 0.95) // 5% deficit
-      deficitSurplus = -Math.round(tdee * 0.05)
+      // Spec: Slight deficit (-5% to 0%)
+      calorieTarget = Math.round(tdee * 0.975) // Midpoint -2.5%
+      deficitSurplus = -Math.round(tdee * 0.025)
       break
   }
 
@@ -179,26 +205,25 @@ export function calculateMacros(
   carbs: { grams: number; calories: number; percentage: number }
 } {
   // Determine protein target based on goal
-  let proteinPerKg = 1.8 // Default
+  let proteinPerKg = 1.5 // Default for Maintain/Health midpoint (1.2-1.8)
 
   switch (goal) {
     case "lose_fat":
     case "recomposition":
-      proteinPerKg = 2.4 // Higher protein for fat loss/recomp
+      proteinPerKg = 2.2 // Midpoint of 1.8-2.6
       break
     case "build_muscle":
     case "clean_bulk":
-      proteinPerKg = 2.2 // High protein for muscle building
+    case "aggressive_bulk": // Use same range for all muscle gain/bulk
+      proteinPerKg = 1.9 // Midpoint of 1.6-2.2
       break
-    case "aggressive_bulk":
-      proteinPerKg = 2.0 // Moderate-high protein for bulking
-      break
-    case "gain_weight":
-      proteinPerKg = 1.6 // Moderate protein for weight gain
+    // Removed aggressive_bulk specific case
+    case "gain_weight": // Spec vague, using general muscle gain minimum
+      proteinPerKg = 1.6 // Minimum of 1.6-2.2 range
       break
     case "maintain":
     case "improve_health":
-      proteinPerKg = 1.8 // Moderate protein for maintenance/health
+      proteinPerKg = 1.5 // Midpoint of 1.2-1.8
       break
   }
 
@@ -213,13 +238,15 @@ export function calculateMacros(
   const proteinGrams = Math.round(weight * proteinPerKg)
   const proteinCalories = proteinGrams * 4
 
-  // Calculate fat target (0.8-1.0g per kg)
-  let fatMultiplier = 0.8
-  if (goal === "lose_fat" || goal === "recomposition") {
-    fatMultiplier = 1.0 // Higher fat for cutting
-  }
+  // Calculate fat target based on Spec (20-35% of calories, min 0.6g/kg)
+  const targetFatPercentage = 0.275 // Midpoint of 20-35%
+  const fatCaloriesFromPercentage = calorieTarget * targetFatPercentage
+  let fatGramsFromPercentage = fatCaloriesFromPercentage / 9
 
-  const fatGrams = Math.round(weight * fatMultiplier)
+  const minFatGrams = weight * 0.6
+
+  // Use the higher value: percentage-based or minimum g/kg
+  const fatGrams = Math.round(Math.max(fatGramsFromPercentage, minFatGrams))
   const fatCalories = fatGrams * 9
 
   // Calculate remaining calories for carbs

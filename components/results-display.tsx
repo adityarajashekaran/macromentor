@@ -10,6 +10,7 @@ import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { DonutChart } from "@tremor/react"
 
 // Define the props interface
 interface ResultsDisplayProps {
@@ -62,6 +63,7 @@ interface ResultsDisplayProps {
     metrics?: {
       bmi: number
       lbm?: number
+      bodyFatPercentage?: number
     }
   }
   ethnicityAdjustmentApplied: boolean
@@ -90,6 +92,9 @@ const itemVariants = {
 // Using default export instead of named export
 const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayProps) => {
   console.log("ResultsDisplay component rendering", { results, ethnicityAdjustmentApplied })
+
+  // Helper function to round numbers
+  const round = (num: number, places: number = 0) => parseFloat(num.toFixed(places))
 
   // Format activity level for display
   const formatActivityLevel = (level: string) => {
@@ -324,320 +329,386 @@ BMR: ${results.bmr} kcal (${results.bmrMethod})
           </Card>
         </motion.div>
 
+        {/* Key Metrics Summary Card */}
+        <motion.div variants={itemVariants} className="bg-muted/30 p-4 rounded-lg border mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-muted-foreground">Target Calories</span>
+              <span className="text-lg font-semibold text-primary">{round(results.calorieTarget)} kcal</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-muted-foreground">TDEE</span>
+              <span className="text-lg font-semibold">{round(results.tdee)} kcal</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-muted-foreground">BMR ({results.bmrMethod})</span>
+              <span className="text-lg font-semibold">{round(results.bmr)} kcal</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-muted-foreground">{results.deficitSurplus >= 0 ? "Surplus" : "Deficit"}</span>
+              <span className={`text-lg font-semibold ${results.deficitSurplus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {Math.abs(round(results.deficitSurplus))} kcal
+              </span>
+            </div>
+          </div>
+          {results.metrics && (
+            <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+              {results.metrics.bmi && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground">BMI</span>
+                  <span className="text-lg font-semibold">{round(results.metrics.bmi, 1)}</span>
+                </div>
+              )}
+              {results.metrics.lbm && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-muted-foreground">Lean Body Mass</span>
+                  <span className="text-lg font-semibold">{round(results.metrics.lbm, 1)} kg</span>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
+
         {/* Macronutrients Tabs */}
         <motion.div variants={itemVariants}>
-          <Tabs defaultValue="overview" className="w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-foreground flex items-center">
-                <Utensils className="h-5 w-5 mr-2 text-primary" /> Macronutrient Breakdown
-              </h3>
-              <TabsList className="grid w-full max-w-xs grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="grams">Grams</TabsTrigger>
-                <TabsTrigger value="calories">Calories</TabsTrigger>
-              </TabsList>
-            </div>
-            <Separator className="mb-6" />
+          <Tabs defaultValue="macronutrients" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="macronutrients">Macronutrients</TabsTrigger>
+              <TabsTrigger value="micronutrients">Micronutrients</TabsTrigger>
+              <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+            </TabsList>
 
-            {/* Overview Tab */}
-            <TabsContent value="overview">
-              <Card className="border shadow-sm">
+            {/* Macronutrients Tab */}
+            <TabsContent value="macronutrients">
+              <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>Macronutrient Ratio</CardTitle>
-                  <CardDescription>
-                    Recommended distribution of Protein, Carbohydrates, and Fat based on your goal and profile.
-                  </CardDescription>
+                  <CardTitle>Macronutrient Distribution</CardTitle>
+                  <CardDescription>Your optimal balance of protein, carbs, and fat</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <TooltipProvider>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-blue-600 dark:text-blue-400">Protein</span>
-                        <span className="text-sm text-muted-foreground">
-                          {results.macros.protein.grams}g / {results.macros.protein.calories} kcal
-                        </span>
-                      </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Progress
-                            value={results.macros.protein.percentage}
-                            className="h-2 bg-blue-100 [&>div]:bg-blue-500 cursor-help"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{results.macros.protein.percentage}% of total calories</p>
-                        </TooltipContent>
-                      </Tooltip>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    {/* Donut Chart */}
+                    <div className="flex justify-center md:col-span-1">
+                      <DonutChart
+                        data={[{ name: 'Protein', value: results.macros.protein.calories }, { name: 'Carbohydrates', value: results.macros.carbs.calories }, { name: 'Fat', value: results.macros.fat.calories }]}
+                        category="value"
+                        index="name"
+                        colors={["emerald", "blue", "amber"]}
+                        className="w-48 h-48"
+                        label={`${round(results.calorieTarget)}\ncalories`}
+                        showLabel={true}
+                      />
                     </div>
-                  </TooltipProvider>
-                  <TooltipProvider>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-orange-600 dark:text-orange-400">Carbs</span>
-                        <span className="text-sm text-muted-foreground">
-                          {results.macros.carbs.grams}g / {results.macros.carbs.calories} kcal
-                        </span>
+                    {/* Macro Breakdown */}
+                    <div className="md:col-span-2 space-y-4">
+                      {/* Protein */}
+                      <div className="flex items-center">
+                        <span className="h-3 w-3 rounded-full bg-emerald-500 mr-2 flex-shrink-0"></span>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-baseline">
+                            <span className="font-medium">Protein</span>
+                            <span className="font-bold text-lg">{round(results.macros.protein.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.protein.percentage)}%)</span></span>
+                          </div>
+                          <Progress value={results.macros.protein.percentage} className="h-2 mt-1 [&>div]:bg-emerald-500" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {round(results.macros.protein.calories)} calories • {round(results.macros.protein.grams / results.userProfile.weight, 1)}g per kg bodyweight
+                          </p>
+                        </div>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Progress
-                            value={results.macros.carbs.percentage}
-                            className="h-2 bg-orange-100 [&>div]:bg-orange-500 cursor-help"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{results.macros.carbs.percentage}% of total calories</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </TooltipProvider>
-                  <TooltipProvider>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Fat</span>
-                        <span className="text-sm text-muted-foreground">
-                          {results.macros.fat.grams}g / {results.macros.fat.calories} kcal
-                        </span>
+                      {/* Carbs */}
+                      <div className="flex items-center">
+                        <span className="h-3 w-3 rounded-full bg-blue-500 mr-2 flex-shrink-0"></span>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-baseline">
+                            <span className="font-medium">Carbohydrates</span>
+                            <span className="font-bold text-lg">{round(results.macros.carbs.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.carbs.percentage)}%)</span></span>
+                          </div>
+                          <Progress value={results.macros.carbs.percentage} className="h-2 mt-1 [&>div]:bg-blue-500" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {round(results.macros.carbs.calories)} calories • {round(results.macros.carbs.grams / results.userProfile.weight, 1)}g per kg bodyweight
+                          </p>
+                        </div>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Progress
-                            value={results.macros.fat.percentage}
-                            className="h-2 bg-yellow-100 [&>div]:bg-yellow-500 cursor-help"
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{results.macros.fat.percentage}% of total calories</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      {/* Fat */}
+                      <div className="flex items-center">
+                        <span className="h-3 w-3 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-baseline">
+                            <span className="font-medium">Fat</span>
+                            <span className="font-bold text-lg">{round(results.macros.fat.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.fat.percentage)}%)</span></span>
+                          </div>
+                          <Progress value={results.macros.fat.percentage} className="h-2 mt-1 [&>div]:bg-amber-500" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {round(results.macros.fat.calories)} calories • {round(results.macros.fat.grams / results.userProfile.weight, 1)}g per kg bodyweight
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </TooltipProvider>
+                  </div>
+                  {/* Why This Matters Section */}
+                  <div className="bg-muted/50 p-4 rounded-lg border">
+                    <h4 className="font-semibold mb-2 text-foreground">Why This Matters</h4>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><strong className="text-emerald-600">Protein:</strong> Builds and repairs muscle tissue, supports immune function, and increases satiety. Your target of {round(results.macros.protein.grams)}g ({round(results.macros.protein.grams / results.userProfile.weight, 1)}g/kg) is optimized for your {results.userProfile.goal === 'build_muscle' ? 'build_muscle' : 'health'} goal.</li>
+                      <li><strong className="text-blue-600">Carbs:</strong> Primary energy source, fuels brain and high-intensity exercise. Your target of {round(results.macros.carbs.grams)}g provides adequate energy while balancing your overall calorie goal.</li>
+                      <li><strong className="text-amber-600">Fat:</strong> Supports hormone production, brain health, and nutrient absorption. Your target of {round(results.macros.fat.grams)}g ({round(results.macros.fat.grams / results.userProfile.weight, 1)}g/kg) ensures adequate essential fatty acids.</li>
+                    </ul>
+                  </div>
                 </CardContent>
-                <CardFooter className="text-xs text-muted-foreground">
-                  Note: Percentages may not sum to exactly 100 due to rounding. Hover over bars for exact percentage.
-                </CardFooter>
               </Card>
             </TabsContent>
 
-            {/* Grams Tab */}
-            <TabsContent value="grams">
-              <Card className="border shadow-sm">
+            {/* Micronutrients Tab */}
+            <TabsContent value="micronutrients">
+              <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>Macronutrients in Grams</CardTitle>
-                  <CardDescription>
-                    Your daily targets for each macronutrient in grams. Aim to hit these targets consistently.
-                  </CardDescription>
+                  <CardTitle>Micronutrient Recommendations</CardTitle>
+                  <CardDescription>Essential vitamins and minerals for optimal health</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Protein</span>
-                    <span className="text-4xl font-bold text-blue-800 dark:text-blue-200 mt-1">
-                      {results.macros.protein.grams}g
-                    </span>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Iron */}
+                    <Card className={highlightIron ? "border-primary" : ""}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Iron</CardTitle>
+                        <Badge variant={highlightIron ? "default" : "secondary"}>{results.micronutrients.iron} mg</Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Essential for oxygen transport</p>
+                        <p className="text-sm font-medium">Good sources:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline">Red meat</Badge>
+                          <Badge variant="outline">Spinach</Badge>
+                          <Badge variant="outline">Lentils</Badge>
+                          <Badge variant="outline">Fortified cereals</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Calcium */}
+                    <Card className={highlightCalcium ? "border-primary" : ""}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Calcium</CardTitle>
+                        <Badge variant={highlightCalcium ? "default" : "secondary"}>{results.micronutrients.calcium} mg</Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Important for bone health</p>
+                        <p className="text-sm font-medium">Good sources:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline">Dairy</Badge>
+                          <Badge variant="outline">Fortified plant milks</Badge>
+                          <Badge variant="outline">Leafy greens</Badge>
+                          <Badge variant="outline">Tofu</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Vitamin D */}
+                    <Card className={highlightVitD ? "border-primary" : ""}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Vitamin D</CardTitle>
+                        <Badge variant={highlightVitD ? "default" : "secondary"}>{results.micronutrients.vitaminD} IU</Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Supports immune function and bone health</p>
+                        <p className="text-sm font-medium">Good sources:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline">Sunlight</Badge>
+                          <Badge variant="outline">Fatty fish</Badge>
+                          <Badge variant="outline">Fortified foods</Badge>
+                          <Badge variant="outline">Egg yolks</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Omega-3 */}
+                    <Card className={highlightOmega3 ? "border-primary" : ""}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Omega-3 Fatty Acids</CardTitle>
+                        <Badge variant={highlightOmega3 ? "default" : "secondary"}>{results.micronutrients.omega3} mg</Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Essential for heart and brain health</p>
+                        <p className="text-sm font-medium">Good sources:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline">Fatty fish</Badge>
+                          <Badge variant="outline">Flaxseeds</Badge>
+                          <Badge variant="outline">Walnuts</Badge>
+                          <Badge variant="outline">Chia seeds</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Fiber */}
+                    <Card className="md:col-span-2">
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Fiber</CardTitle>
+                        <Badge variant="secondary">{results.micronutrients.fiber} g</Badge>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-xs text-muted-foreground mb-2">Important for digestive health</p>
+                        <p className="text-sm font-medium">Good sources:</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge variant="outline">Whole grains</Badge>
+                          <Badge variant="outline">Fruits</Badge>
+                          <Badge variant="outline">Vegetables</Badge>
+                          <Badge variant="outline">Legumes</Badge>
+                          <Badge variant="outline">Nuts</Badge>
+                          <Badge variant="outline">Seeds</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-orange-50 dark:bg-orange-950">
-                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Carbohydrates</span>
-                    <span className="text-4xl font-bold text-orange-800 dark:text-orange-200 mt-1">
-                      {results.macros.carbs.grams}g
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-950">
-                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Fat</span>
-                    <span className="text-4xl font-bold text-yellow-800 dark:text-yellow-200 mt-1">
-                      {results.macros.fat.grams}g
-                    </span>
-                  </div>
+                  <Alert className="mt-4 bg-blue-50 border-blue-200 text-blue-800">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="font-semibold">Pro Tip</AlertTitle>
+                    <AlertDescription>
+                      Aim for {results.micronutrients.fiber}g of fiber daily, which is approximately 14g per 1000 calories consumed. Increase fiber intake gradually and drink plenty of water to prevent digestive discomfort.
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
-                <CardFooter className="text-xs text-muted-foreground">
-                  Protein: Muscle repair & growth. Carbs: Primary energy source. Fat: Hormone production & cell function.
-                </CardFooter>
               </Card>
             </TabsContent>
 
-            {/* Calories Tab */}
-            <TabsContent value="calories">
-              <Card className="border shadow-sm">
+            {/* Recommendations Tab */}
+            <TabsContent value="recommendations">
+              <Card className="mt-4">
                 <CardHeader>
-                  <CardTitle>Macronutrients by Calories</CardTitle>
-                  <CardDescription>
-                    How many calories should come from each macronutrient per day.
-                  </CardDescription>
+                  <CardTitle>Personalized Recommendations</CardTitle>
+                  <CardDescription>Optimize your nutrition plan for best results</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Protein</span>
-                    <span className="text-3xl font-bold text-blue-800 dark:text-blue-200 mt-1">
-                      {results.macros.protein.calories} kcal
-                    </span>
-                    <span className="text-xs text-muted-foreground">({results.macros.protein.percentage}%)</span>
+                <CardContent className="space-y-6">
+                  {/* Lifestyle/Strategy Recommendations */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Meal Timing</h4>
+                        <p className="text-sm text-muted-foreground">Distribute your protein intake evenly throughout the day (20-30g per meal) to maximize muscle protein synthesis. Aim for 3-5 meals spaced 3-5 hours apart.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Fiber Intake</h4>
+                        <p className="text-sm text-muted-foreground">Aim for {results.micronutrients.fiber}g of fiber daily from fruits, vegetables, and whole grains for digestive health. Increase intake gradually to avoid digestive discomfort.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Hydration</h4>
+                        <p className="text-sm text-muted-foreground">Aim for 2-3 liters of water daily, more if you're active or in hot environments. A good rule of thumb is 30-40ml per kg of bodyweight.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Weight Management</h4>
+                        <p className="text-sm text-muted-foreground">Focus on sustainable habits rather than rapid weight loss. Even modest weight loss (5-10%) can provide significant health benefits. Aim for consistency over perfection.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Reassessment</h4>
+                        <p className="text-sm text-muted-foreground">Recalculate your needs every 4-6 weeks as your body composition changes. If progress stalls for more than 2 weeks, consider adjusting your calorie target.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium">Food Quality</h4>
+                        <p className="text-sm text-muted-foreground">Focus on whole, minimally processed foods for the majority (80%) of your diet. This ensures adequate micronutrient intake and better satiety.</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-orange-50 dark:bg-orange-950">
-                    <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Carbohydrates</span>
-                    <span className="text-3xl font-bold text-orange-800 dark:text-orange-200 mt-1">
-                      {results.macros.carbs.calories} kcal
-                    </span>
-                    <span className="text-xs text-muted-foreground">({results.macros.carbs.percentage}%)</span>
-                  </div>
-                  <div className="flex flex-col items-center p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-950">
-                    <span className="text-sm font-medium text-yellow-700 dark:text-yellow-300">Fat</span>
-                    <span className="text-3xl font-bold text-yellow-800 dark:text-yellow-200 mt-1">
-                      {results.macros.fat.calories} kcal
-                    </span>
-                    <span className="text-xs text-muted-foreground">({results.macros.fat.percentage}%)</span>
+
+                  <Separator />
+
+                  {/* Sample Meal Structure */}
+                  <div>
+                    <h4 className="font-semibold mb-3 text-foreground">Sample Daily Meal Structure</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Breakfast */}
+                      <div className="bg-muted/30 p-4 rounded-lg border">
+                        <h5 className="font-medium mb-1">Breakfast (25%)</h5>
+                        <p className="text-sm text-muted-foreground">~{round(results.calorieTarget * 0.25)} kcal</p>
+                        <ul className="text-xs mt-2 space-y-0.5">
+                          <li>Protein: ~{round(results.macros.protein.grams * 0.25)}g</li>
+                          <li>Carbs: ~{round(results.macros.carbs.grams * 0.25)}g</li>
+                          <li>Fat: ~{round(results.macros.fat.grams * 0.25)}g</li>
+                        </ul>
+                      </div>
+                      {/* Lunch */}
+                      <div className="bg-muted/30 p-4 rounded-lg border">
+                        <h5 className="font-medium mb-1">Lunch (30%)</h5>
+                        <p className="text-sm text-muted-foreground">~{round(results.calorieTarget * 0.30)} kcal</p>
+                        <ul className="text-xs mt-2 space-y-0.5">
+                          <li>Protein: ~{round(results.macros.protein.grams * 0.30)}g</li>
+                          <li>Carbs: ~{round(results.macros.carbs.grams * 0.30)}g</li>
+                          <li>Fat: ~{round(results.macros.fat.grams * 0.30)}g</li>
+                        </ul>
+                      </div>
+                      {/* Dinner */}
+                      <div className="bg-muted/30 p-4 rounded-lg border">
+                        <h5 className="font-medium mb-1">Dinner (30%)</h5>
+                        <p className="text-sm text-muted-foreground">~{round(results.calorieTarget * 0.30)} kcal</p>
+                        <ul className="text-xs mt-2 space-y-0.5">
+                          <li>Protein: ~{round(results.macros.protein.grams * 0.30)}g</li>
+                          <li>Carbs: ~{round(results.macros.carbs.grams * 0.30)}g</li>
+                          <li>Fat: ~{round(results.macros.fat.grams * 0.30)}g</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 text-center">The remaining 15% can be distributed as snacks or added to meals based on your preference.</p>
                   </div>
                 </CardContent>
-                <CardFooter className="text-xs text-muted-foreground">
-                  1g Protein = 4 kcal | 1g Carb = 4 kcal | 1g Fat = 9 kcal
-                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
         </motion.div>
 
-        {/* Micronutrients & Health Markers */}
-        <motion.div variants={itemVariants}>
-          <Card className="border shadow-sm">
-            <CardHeader>
-              <CardTitle>Key Micronutrients & Health Markers</CardTitle>
-              <CardDescription>
-                Important considerations for overall health based on your profile and goals. These are general targets;
-                individual needs may vary. Focus on whole foods like fruits, vegetables, lean proteins, and whole grains.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className={`flex flex-col items-center p-3 border rounded-lg ${highlightIron ? 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800' : 'bg-muted/30' } text-center`}>
-                <span className={`text-sm font-medium ${highlightIron ? 'text-blue-700 dark:text-blue-300' : ''}`}>Iron</span>
-                <span className={`text-lg font-bold mt-1 ${highlightIron ? 'text-blue-800 dark:text-blue-200' : ''}`}>≈{results.micronutrients.iron}mg</span>
-                <span className="text-xs text-muted-foreground mt-0.5">Energy, Oxygen Transport</span>
-                {highlightIron && <Badge variant="secondary" className="mt-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">Increased focus recommended</Badge>}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-xs text-muted-foreground underline cursor-help mt-1">Sources</TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Red meat, poultry, fish, lentils, beans, tofu, spinach, fortified cereals. Pair with Vitamin C sources (e.g., citrus) to enhance absorption, especially for plant sources.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className={`flex flex-col items-center p-3 border rounded-lg ${highlightCalcium ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-muted/30' } text-center`}>
-                <span className={`text-sm font-medium ${highlightCalcium ? 'text-green-700 dark:text-green-300' : ''}`}>Calcium</span>
-                <span className={`text-lg font-bold mt-1 ${highlightCalcium ? 'text-green-800 dark:text-green-200' : ''}`}>≥{results.micronutrients.calcium}mg</span>
-                <span className="text-xs text-muted-foreground mt-0.5">Bone Health</span>
-                {highlightCalcium && <Badge variant="secondary" className="mt-1 text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Increased focus recommended</Badge>}
-                 <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-xs text-muted-foreground underline cursor-help mt-1">Sources</TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Dairy products (milk, yogurt, cheese), fortified plant milks (soy, almond), leafy greens (kale, collards), tofu (calcium-set), sardines/salmon (with bones).</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className={`flex flex-col items-center p-3 border rounded-lg ${highlightVitD ? 'bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800' : 'bg-muted/30' } text-center`}>
-                <span className={`text-sm font-medium ${highlightVitD ? 'text-yellow-700 dark:text-yellow-300' : ''}`}>Vitamin D</span>
-                <span className={`text-lg font-bold mt-1 ${highlightVitD ? 'text-yellow-800 dark:text-yellow-200' : ''}`}>≈{results.micronutrients.vitaminD} IU</span>
-                <span className="text-xs text-muted-foreground mt-0.5">Immunity, Bone Health</span>
-                 {highlightVitD && <Badge variant="secondary" className="mt-1 text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">Increased focus recommended</Badge>}
-                 <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-xs text-muted-foreground underline cursor-help mt-1">Sources</TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Sunlight exposure (safely), fatty fish (salmon, mackerel), fortified milk/cereals, egg yolks, mushrooms (UV-exposed). Many people benefit from supplementation, especially in winter.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className={`flex flex-col items-center p-3 border rounded-lg ${highlightOmega3 ? 'bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800' : 'bg-muted/30' } text-center`}>
-                <span className={`text-sm font-medium ${highlightOmega3 ? 'text-purple-700 dark:text-purple-300' : ''}`}>Omega-3 (EPA/DHA)</span>
-                <span className={`text-lg font-bold mt-1 ${highlightOmega3 ? 'text-purple-800 dark:text-purple-200' : ''}`}>≥{results.micronutrients.omega3}mg</span>
-                <span className="text-xs text-muted-foreground mt-0.5">Heart, Brain Health</span>
-                 {highlightOmega3 && <Badge variant="secondary" className="mt-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">Increased focus recommended</Badge>}
-                 <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-xs text-muted-foreground underline cursor-help mt-1">Sources</TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Fatty fish (salmon, sardines, herring), algae oil (vegan source of EPA/DHA). Plant sources like flaxseeds, chia seeds, walnuts provide ALA, which converts inefficiently to EPA/DHA.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-               <div className="flex flex-col items-center p-3 border rounded-lg bg-muted/30 text-center">
-                 <span className="text-sm font-medium">Fiber</span>
-                 <span className="text-lg font-bold mt-1">≥{results.micronutrients.fiber}g</span>
-                 <span className="text-xs text-muted-foreground mt-0.5">Digestion, Satiety</span>
-                 <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger className="text-xs text-muted-foreground underline cursor-help mt-1">Sources</TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Whole grains (oats, quinoa, brown rice), fruits (berries, apples, pears), vegetables (broccoli, Brussels sprouts, carrots), legumes (beans, lentils, peas), nuts, seeds.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-               </div>
-               {results.metrics?.bmi && (
-                 <div className="flex flex-col items-center p-3 border rounded-lg bg-muted/30 text-center">
-                   <span className="text-sm font-medium">BMI</span>
-                   <span className="text-lg font-bold mt-1">{results.metrics.bmi.toFixed(1)}</span>
-                   <span className="text-xs text-muted-foreground mt-0.5">Body Mass Index</span>
-                 </div>
-              )}
-               {results.metrics?.lbm && (
-                 <div className="flex flex-col items-center p-3 border rounded-lg bg-muted/30 text-center">
-                   <span className="text-sm font-medium">Lean Body Mass</span>
-                   <span className="text-lg font-bold mt-1">{results.metrics.lbm.toFixed(1)} kg</span>
-                   <span className="text-xs text-muted-foreground mt-0.5">Muscle, Bone, Organs</span>
-                 </div>
-              )}
-            </CardContent>
-            <CardFooter className="text-xs text-muted-foreground">
-              Focus on whole foods to meet these targets. Consider supplements if dietary intake is insufficient.
-            </CardFooter>
-          </Card>
-        </motion.div>
-
-        {/* Warnings & Recommendations */}
-        {(results.warnings.belowMinimum || results.warnings.refeedRecommended) && (
+        {/* Alerts/Warnings (Below Tabs) */}
+        {(results.warnings.belowMinimum || results.warnings.refeedRecommended || ethnicityAdjustmentApplied) && (
           <motion.div variants={itemVariants} className="space-y-4">
-            <h3 className="text-xl font-semibold text-foreground">Important Considerations</h3>
+            <h3 className="text-lg font-semibold text-foreground">Alerts & Special Considerations</h3>
             {results.warnings.belowMinimum && (
-              <Alert variant="destructive" className="border-destructive/50">
-                <Info className="h-4 w-4" />
-                <AlertTitle className="font-semibold">Minimum Calorie Alert</AlertTitle>
+              <Alert variant="destructive">
+                <Flame className="h-4 w-4" />
+                <AlertTitle>Warning: Low Calorie Intake</AlertTitle>
                 <AlertDescription>
-                  Your calculated target of {results.calorieTarget} kcal falls below the generally recommended minimum ({results.userProfile.sex === "female" ? 1200 : 1500} kcal) for adequate nutrient intake and metabolic health.
-                  <strong className="block mt-1">
-                    The target has been adjusted upwards to {results.userProfile.sex === "female" ? 1200 : 1500} kcal.
-                  </strong>
-                  Ensure your diet is rich in nutrient-dense foods. Very low-calorie plans should ideally be followed under professional supervision.
+                  Your calculated target of {results.calorieTarget} kcal is below the generally recommended minimum (1200 kcal for women, 1500 kcal for men). This may not be sustainable or healthy long-term. Consider consulting a healthcare professional.
                 </AlertDescription>
               </Alert>
             )}
             {results.warnings.refeedRecommended && (
-              <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/60 dark:border-amber-800 dark:text-amber-300">
-                <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                <AlertTitle className="font-semibold text-amber-700 dark:text-amber-200">Refeed Day Recommendation</AlertTitle>
+              <Alert variant="default" className="bg-yellow-50 border-yellow-200 text-yellow-800">
+                <Apple className="h-4 w-4 text-yellow-600" />
+                <AlertTitle>Recommendation: Consider Refeed Days</AlertTitle>
                 <AlertDescription>
-                  Due to the significant calorie deficit ({results.deficitSurplus} kcal), incorporating 1-2 planned "refeed" days per week may be beneficial.
-                  On these days, increase carbohydrate intake to bring calories closer to your maintenance level ({results.tdee} kcal).
-                  This can help manage hunger, support metabolism, and improve adherence during extended fat loss phases.
+                  For prolonged fat loss phases or very low body fat levels, incorporating planned refeed days (higher carb/calorie days) can help mitigate metabolic adaptation and hormonal imbalances.
+                </AlertDescription>
+              </Alert>
+            )}
+            {ethnicityAdjustmentApplied && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertTitle>Note: Ethnicity Adjustment Applied</AlertTitle>
+                <AlertDescription>
+                  An adjustment was applied to your BMR calculation based on the selected ethnicity (East Asian/South Asian) as some studies suggest potential differences in metabolic rate.
                 </AlertDescription>
               </Alert>
             )}
           </motion.div>
         )}
 
-        {/* Disclaimer */}
+        {/* Disclaimer Section */}
         <motion.div variants={itemVariants}>
-          <Card className="border-dashed border-amber-300 bg-amber-50/50 dark:bg-amber-950/30 dark:border-amber-800">
-            <CardHeader className="flex-row items-center space-x-3 space-y-0">
-              <Info className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              <CardTitle className="text-amber-700 dark:text-amber-300">Disclaimer</CardTitle>
+          <Card className="mt-8 bg-muted/20 border-dashed">
+            <CardHeader>
+              <CardTitle className="text-base font-medium">Disclaimer</CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-amber-600 dark:text-amber-400">
-              This calculator provides estimates based on established formulas and your inputs. Individual results may
-              vary due to genetics, health conditions, and other factors. This information is not a substitute for
-              professional medical or nutritional advice. Consult with a qualified healthcare provider or registered
-              dietitian before making significant changes to your diet or exercise routine.
+            <CardContent>
+              <p className="text-xs text-muted-foreground">
+                The information provided by MacroMentor is intended for informational purposes only and does not constitute medical advice. The calculations are based on established formulas but individual needs may vary. Always consult with a qualified healthcare professional or registered dietitian before making significant changes to your diet or exercise routine, especially if you have underlying health conditions.
+              </p>
             </CardContent>
           </Card>
         </motion.div>
