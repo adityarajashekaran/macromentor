@@ -236,7 +236,8 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
           </div>
         </motion.div>
 
-        {ethnicityAdjustmentApplied && (
+        {/* REMOVE the first ethnicity adjustment alert block */}
+        {/* {ethnicityAdjustmentApplied && (
           <motion.div variants={itemVariants}>
             <Alert className="mb-4 bg-blue-50 border-blue-100 dark:bg-blue-950 dark:border-blue-900">
               <Info className="h-4 w-4 text-blue-500 dark:text-blue-400" />
@@ -249,7 +250,7 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
               </AlertDescription>
             </Alert>
           </motion.div>
-        )}
+        )} */}
 
         {/* Energy Summary Cards */}
         <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -703,12 +704,16 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
                 </AlertDescription>
               </Alert>
             )}
+            {/* KEEP this alert, but update its text and remove explicit blue styling */}
             {ethnicityAdjustmentApplied && (
               <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Note: Ethnicity Adjustment Applied</AlertTitle>
+                <Info className="h-4 w-4" /> {/* Keep Info icon, color will be default */} 
+                <AlertTitle>Population-Based Adjustment Applied</AlertTitle>
                 <AlertDescription>
-                  An adjustment was applied to your BMR calculation based on the selected ethnicity (East Asian/South Asian) as some studies suggest potential differences in metabolic rate.
+                  Based on the optional ethnicity information provided and population-level research averages, a small
+                  adjustment was applied to the initial metabolic rate estimate as body fat percentage was not available.
+                  This adjustment reflects statistical averages from research studies and is not deterministic. Individual
+                  metabolism varies greatly within any group, and your actual needs may differ.
                 </AlertDescription>
               </Alert>
             )}
