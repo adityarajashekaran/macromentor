@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, SubmitHandler } from "react-hook-form"
+import { useForm, SubmitHandler, Resolver } from "react-hook-form"
 import { z } from "zod"
 import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -135,7 +135,7 @@ export function Calculator() {
   }
 
   const form = useForm<CalculatorFormValues>({
-    resolver: zodResolver<CalculatorFormValues>(formSchema),
+    resolver: zodResolver(formSchema),
     defaultValues,
     mode: "onChange",
   })
@@ -710,25 +710,39 @@ export function Calculator() {
                             <div className="pt-2">
                               <RadioGroup
                                 onValueChange={field.onChange}
+                                defaultValue={field.value}
                                 className="flex flex-col sm:flex-row gap-4"
                               >
-                                <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                <FormItem className="flex items-center space-x-3 space-y-0">
                                   <FormControl>
-                                    <RadioGroupItem value="male" />
+                                    <RadioGroupItem value="male" id={`sex-male-${field.name}`} />
                                   </FormControl>
-                                  <FormLabel className="font-medium cursor-pointer">Male</FormLabel>
+                                  <FormLabel
+                                    htmlFor={`sex-male-${field.name}`}
+                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
+                                  >
+                                    Male
+                                  </FormLabel>
                                 </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                <FormItem className="flex items-center space-x-3 space-y-0">
                                   <FormControl>
-                                    <RadioGroupItem value="female" />
+                                    <RadioGroupItem value="female" id={`sex-female-${field.name}`} />
                                   </FormControl>
-                                  <FormLabel className="font-medium cursor-pointer">Female</FormLabel>
+                                  <FormLabel
+                                    htmlFor={`sex-female-${field.name}`}
+                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
+                                  >
+                                    Female
+                                  </FormLabel>
                                 </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                                <FormItem className="flex items-center space-x-3 space-y-0">
                                   <FormControl>
-                                    <RadioGroupItem value="other" />
+                                    <RadioGroupItem value="other" id={`sex-other-${field.name}`} />
                                   </FormControl>
-                                  <FormLabel className="font-medium cursor-pointer">
+                                  <FormLabel
+                                    htmlFor={`sex-other-${field.name}`}
+                                    className="font-medium cursor-pointer rounded-md border p-4 hover:bg-muted/50 transition-colors w-full has-[+input:checked]:bg-muted/50 has-[+input:checked]:border-primary"
+                                  >
                                     Prefer to Specify Differently
                                   </FormLabel>
                                 </FormItem>

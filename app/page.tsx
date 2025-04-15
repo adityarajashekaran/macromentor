@@ -1,10 +1,20 @@
+"use client"
+
+import { useState } from "react"
 import type React from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Activity, Apple, CalculatorIcon as CalcIcon, Heart, Utensils } from "lucide-react"
+import { Activity, Apple, CalculatorIcon as CalcIcon, Heart, Utensils, Loader2 } from "lucide-react"
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleGetStartedClick = () => {
+    setIsLoading(true)
+    // Navigation will happen via the Link component
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12">
       <div className="container px-4 mx-auto">
@@ -73,9 +83,20 @@ export default function Home() {
 
         {/* Call to Action Button */}
         <div className="text-center mt-16 mb-12">
-          <Link href="/calculator" passHref>
-            <Button size="lg" className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg">
-              Get Started with MacroMentor
+          <Link href="/calculator" passHref onClick={handleGetStartedClick}>
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-75"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                "Get Started with MacroMentor"
+              )}
             </Button>
           </Link>
         </div>
