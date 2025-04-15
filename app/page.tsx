@@ -3,17 +3,43 @@
 import { useState } from "react"
 import type React from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Activity, Apple, CalculatorIcon as CalcIcon, Heart, Utensils, Loader2 } from "lucide-react"
-import Link from "next/link";
+import { Activity, Apple, CalculatorIcon as CalcIcon, Heart, Utensils, Loader2, ShieldAlert } from "lucide-react"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isChecked, setIsChecked] = useState(false)
+  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false)
+  const router = useRouter()
 
-  const handleGetStartedClick = () => {
-    setIsLoading(true)
-    // Navigation will happen via the Link component
+  const handleGetStartedClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setIsDisclaimerOpen(true)
   }
+
+  const handleDisclaimerContinue = () => {
+    if (isChecked) {
+      setIsLoading(true)
+      setIsDisclaimerOpen(false)
+      router.push('/calculator')
+    }
+  }
+
+  const disclaimerText = "The information provided by MacroMentor is intended for informational purposes only and does not constitute medical advice. The calculations are based on established formulas but individual needs may vary. Always consult with a qualified healthcare professional or registered dietitian before making significant changes to your diet or exercise routine, especially if you have underlying health conditions."
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-background/80 py-12">
@@ -83,22 +109,53 @@ export default function Home() {
 
         {/* Call to Action Button */}
         <div className="text-center mt-16 mb-12">
-          <Link href="/calculator" passHref onClick={handleGetStartedClick}>
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-75"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                "Get Started with MacroMentor"
-              )}
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-75"
+            disabled={isLoading}
+            onClick={handleGetStartedClick}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Get Started with MacroMentor"
+            )}
+          </Button>
+
+          <AlertDialog open={isDisclaimerOpen} onOpenChange={setIsDisclaimerOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center">
+                  <ShieldAlert className="h-5 w-5 mr-2 text-destructive" /> Important Disclaimer
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-left pt-2 max-h-[300px] overflow-y-auto">
+                  {disclaimerText}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex items-center space-x-2 py-4">
+                <Checkbox
+                  id="terms"
+                  checked={isChecked}
+                  onCheckedChange={(checkedState) => setIsChecked(Boolean(checkedState))}
+                />
+                <Label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  I understand and agree to the disclaimer.
+                </Label>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsChecked(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDisclaimerContinue}
+                  disabled={!isChecked}
+                >
+                  Agree & Proceed
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </main>
