@@ -10,6 +10,8 @@ import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { DonutChart } from "@tremor/react"
+// Import necessary components from recharts
+import { PieChart, Pie, Cell, Label, ResponsiveContainer } from 'recharts'
 
 // Define the props interface
 interface ResultsDisplayProps {
@@ -182,7 +184,8 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+          {/* Consolidated User Profile Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-4 mt-6 border-t pt-4">
             <div className="flex flex-col">
               <span className="text-sm text-muted-foreground">Age</span>
               <span className="font-medium">{results.userProfile.age} years</span>
@@ -205,9 +208,6 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
               <span className="text-sm text-muted-foreground">Weight</span>
               <span className="font-medium">{results.userProfile.weight} kg</span>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
             {results.userProfile.bodyFat !== undefined && (
               <div className="flex flex-col">
                 <span className="text-sm text-muted-foreground">Body Fat</span>
@@ -303,44 +303,51 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
           </Card>
         </motion.div>
 
-        {/* Key Metrics Summary Card */}
-        <motion.div variants={itemVariants} className="bg-muted/30 p-4 rounded-lg border mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">Target Calories</span>
-              <span className="text-lg font-semibold text-primary">{round(results.calorieTarget)} kcal</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">TDEE</span>
-              <span className="text-lg font-semibold">{round(results.tdee)} kcal</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">BMR ({results.bmrMethod})</span>
-              <span className="text-lg font-semibold">{round(results.bmr)} kcal</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-muted-foreground">{results.deficitSurplus >= 0 ? "Surplus" : "Deficit"}</span>
-              <span className={`text-lg font-semibold ${results.deficitSurplus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        {/* Surplus/Deficit and BMI Cards */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-6">
+          {/* Surplus/Deficit Card */}
+          <Card className="text-center border shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {results.deficitSurplus >= 0 ? "Daily Calorie Surplus" : "Daily Calorie Deficit"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${results.deficitSurplus >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {Math.abs(round(results.deficitSurplus))} kcal
-              </span>
-            </div>
-          </div>
-          {results.metrics && (
-            <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-              {results.metrics.bmi && (
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-muted-foreground">BMI</span>
-                  <span className="text-lg font-semibold">{round(results.metrics.bmi, 1)}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* BMI Card - Always Displayed */}
+          <Card className="text-center border shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Body Mass Index (BMI)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {results.metrics ? round(results.metrics.bmi, 1) : "N/A"}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Optional: Lean Body Mass Card - uncomment if needed
+          {results.metrics?.lbm && (
+            <Card className="text-center border shadow-md">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Lean Body Mass (Est.)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-foreground">
+                  {round(results.metrics.lbm, 1)} kg
                 </div>
-              )}
-              {results.metrics.lbm && (
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-muted-foreground">Lean Body Mass</span>
-                  <span className="text-lg font-semibold">{round(results.metrics.lbm, 1)} kg</span>
-                </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           )}
+          */}
         </motion.div>
 
         {/* Macronutrients Tabs */}
@@ -361,29 +368,64 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                    {/* Donut Chart */}
-                    <div className="flex justify-center md:col-span-1">
-                      <DonutChart
-                        data={[{ name: 'Protein', value: results.macros.protein.calories }, { name: 'Carbohydrates', value: results.macros.carbs.calories }, { name: 'Fat', value: results.macros.fat.calories }]}
-                        category="value"
-                        index="name"
-                        colors={["emerald", "blue", "amber"]}
-                        className="w-48 h-48"
-                        label={`${round(results.calorieTarget)}\ncalories`}
-                        showLabel={true}
-                      />
+                    {/* Recharts Donut Chart */}
+                    <div className="flex justify-center items-center md:col-span-1 h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <defs>
+                            {/* Define gradients or patterns if needed */}
+                          </defs>
+                          <Pie
+                            data={[
+                              { name: 'Protein', value: results.macros.protein.calories },
+                              { name: 'Carbohydrates', value: results.macros.carbs.calories },
+                              { name: 'Fat', value: results.macros.fat.calories },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60} // Creates the donut hole
+                            outerRadius={80} // Outer size of the chart
+                            fill="#8884d8" // Default fill, overridden by Cell
+                            paddingAngle={1}
+                            dataKey="value"
+                            stroke="hsl(var(--background))" // Use background color for stroke
+                            strokeWidth={2}
+                          >
+                            <Label
+                              value={`${round(results.calorieTarget)}`}
+                              position="center" // Display total calories in the center
+                              fill="hsl(var(--foreground))"
+                              className="text-2xl font-bold"
+                              dy={-10} // Adjust vertical position
+                            />
+                            <Label
+                              value="calories"
+                              position="center"
+                              fill="hsl(var(--muted-foreground))"
+                              className="text-xs"
+                              dy={10} // Adjust vertical position
+                            />
+                            {/* Define colors for each segment */}
+                            <Cell key={`cell-protein`} fill="var(--color-protein)" />
+                            <Cell key={`cell-carbs`} fill="var(--color-carbs)" />
+                            <Cell key={`cell-fat`} fill="var(--color-fat)" />
+                          </Pie>
+                          {/* Add Tooltip if needed */}
+                          {/* <Tooltip /> */}
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
                     {/* Macro Breakdown */}
                     <div className="md:col-span-2 space-y-4">
                       {/* Protein */}
                       <div className="flex items-center">
-                        <span className="h-3 w-3 rounded-full bg-emerald-500 mr-2 flex-shrink-0"></span>
+                        <span className="h-3 w-3 rounded-full !bg-emerald-500 mr-2 flex-shrink-0"></span>
                         <div className="flex-1">
                           <div className="flex justify-between items-baseline">
                             <span className="font-medium">Protein</span>
                             <span className="font-bold text-lg">{round(results.macros.protein.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.protein.percentage)}%)</span></span>
                           </div>
-                          <Progress value={results.macros.protein.percentage} className="h-2 mt-1 [&>div]:bg-emerald-500" />
+                          <Progress value={results.macros.protein.percentage} className="h-2 mt-1 [&>div]:!bg-emerald-500" />
                           <p className="text-xs text-muted-foreground mt-1">
                             {round(results.macros.protein.calories)} calories • {round(results.macros.protein.grams / results.userProfile.weight, 1)}g per kg bodyweight
                           </p>
@@ -391,13 +433,13 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
                       </div>
                       {/* Carbs */}
                       <div className="flex items-center">
-                        <span className="h-3 w-3 rounded-full bg-blue-500 mr-2 flex-shrink-0"></span>
+                        <span className="h-3 w-3 rounded-full !bg-blue-500 mr-2 flex-shrink-0"></span>
                         <div className="flex-1">
                           <div className="flex justify-between items-baseline">
                             <span className="font-medium">Carbohydrates</span>
                             <span className="font-bold text-lg">{round(results.macros.carbs.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.carbs.percentage)}%)</span></span>
                           </div>
-                          <Progress value={results.macros.carbs.percentage} className="h-2 mt-1 [&>div]:bg-blue-500" />
+                          <Progress value={results.macros.carbs.percentage} className="h-2 mt-1 [&>div]:!bg-blue-500" />
                           <p className="text-xs text-muted-foreground mt-1">
                             {round(results.macros.carbs.calories)} calories • {round(results.macros.carbs.grams / results.userProfile.weight, 1)}g per kg bodyweight
                           </p>
@@ -405,13 +447,13 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
                       </div>
                       {/* Fat */}
                       <div className="flex items-center">
-                        <span className="h-3 w-3 rounded-full bg-amber-500 mr-2 flex-shrink-0"></span>
+                        <span className="h-3 w-3 rounded-full !bg-amber-500 mr-2 flex-shrink-0"></span>
                         <div className="flex-1">
                           <div className="flex justify-between items-baseline">
                             <span className="font-medium">Fat</span>
                             <span className="font-bold text-lg">{round(results.macros.fat.grams)}g <span className="text-sm font-normal text-muted-foreground">({round(results.macros.fat.percentage)}%)</span></span>
                           </div>
-                          <Progress value={results.macros.fat.percentage} className="h-2 mt-1 [&>div]:bg-amber-500" />
+                          <Progress value={results.macros.fat.percentage} className="h-2 mt-1 [&>div]:!bg-amber-500" />
                           <p className="text-xs text-muted-foreground mt-1">
                             {round(results.macros.fat.calories)} calories • {round(results.macros.fat.grams / results.userProfile.weight, 1)}g per kg bodyweight
                           </p>
@@ -423,9 +465,9 @@ const ResultsDisplay = ({ results, ethnicityAdjustmentApplied }: ResultsDisplayP
                   <div className="bg-muted/50 p-4 rounded-lg border">
                     <h4 className="font-semibold mb-2 text-foreground">Why This Matters</h4>
                     <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li><strong className="text-emerald-600">Protein:</strong> Builds and repairs muscle tissue, supports immune function, and increases satiety. Your target of {round(results.macros.protein.grams)}g ({round(results.macros.protein.grams / results.userProfile.weight, 1)}g/kg) is optimized for your {results.userProfile.goal === 'build_muscle' ? 'build_muscle' : 'health'} goal.</li>
-                      <li><strong className="text-blue-600">Carbs:</strong> Primary energy source, fuels brain and high-intensity exercise. Your target of {round(results.macros.carbs.grams)}g provides adequate energy while balancing your overall calorie goal.</li>
-                      <li><strong className="text-amber-600">Fat:</strong> Supports hormone production, brain health, and nutrient absorption. Your target of {round(results.macros.fat.grams)}g ({round(results.macros.fat.grams / results.userProfile.weight, 1)}g/kg) ensures adequate essential fatty acids.</li>
+                      <li><strong className="!text-emerald-600">Protein:</strong> Builds and repairs muscle tissue, supports immune function, and increases satiety. Your target of {round(results.macros.protein.grams)}g ({round(results.macros.protein.grams / results.userProfile.weight, 1)}g/kg) is optimized for your {results.userProfile.goal === 'build_muscle' ? 'build_muscle' : 'health'} goal.</li>
+                      <li><strong className="!text-blue-600">Carbs:</strong> Primary energy source, fuels brain and high-intensity exercise. Your target of {round(results.macros.carbs.grams)}g provides adequate energy while balancing your overall calorie goal.</li>
+                      <li><strong className="!text-amber-600">Fat:</strong> Supports hormone production, brain health, and nutrient absorption. Your target of {round(results.macros.fat.grams)}g ({round(results.macros.fat.grams / results.userProfile.weight, 1)}g/kg) ensures adequate essential fatty acids.</li>
                     </ul>
                   </div>
                 </CardContent>
