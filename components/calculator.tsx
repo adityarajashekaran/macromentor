@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, SubmitHandler, Resolver, FieldValues } from "react-hook-form"
 import { z } from "zod"
-import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User, Info } from "lucide-react"
+import { ArrowRight, HelpCircle, CheckCircle2, Activity, Target, Settings, User, Info, TrendingDown, Dumbbell, Scale, Salad, Beef, TrendingUp, Heart, RefreshCw } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 
 // Import both default and named export to ensure compatibility
 import ResultsDisplay from "@/components/results-display"
@@ -96,7 +97,7 @@ const stepInfo = [
   { icon: <User className="h-5 w-5" />, title: "Basic Information", description: "Tell us about yourself" },
   { icon: <Activity className="h-5 w-5" />, title: "Activity Level", description: "Your daily movement" },
   { icon: <Target className="h-5 w-5" />, title: "Goals", description: "What you want to achieve" },
-  { icon: <Settings className="h-5 w-5" />, title: "Advanced", description: "Fine-tune your plan" },
+  { icon: <Settings className="h-5 w-5" />, title: "Fine-tune", description: "Customize your plan" },
 ]
 
 const stepFields: Record<number, (keyof CalculatorFormValues)[]> = {
@@ -138,14 +139,14 @@ const trainingExperienceOptions = [
 
 // Step 3: Goals
 const goalOptions = [
-  { value: "lose_fat", label: "Lose Fat", description: "Creates an energy deficit to promote fat loss while preserving muscle mass" },
-  { value: "build_muscle", label: "Build Lean Muscle", description: "Provides extra energy needed for muscle repair and growth with minimal fat gain" },
-  { value: "maintain", label: "Maintain Current Weight", description: "Balances energy intake with expenditure for weight stability" },
-  { value: "clean_bulk", label: "Clean Bulk", description: "Moderate surplus focused on quality nutrition for muscle gain with minimal fat" },
-  { value: "aggressive_bulk", label: "Aggressive Bulk", description: "Larger surplus to maximize muscle growth, accepting some fat gain" },
-  { value: "gain_weight", label: "Gain Weight", description: "For healthy weight gain when underweight or looking to increase overall mass" },
-  { value: "improve_health", label: "Improve Overall Health", description: "Focuses on nutrient-dense foods and balanced macros rather than weight change" },
-  { value: "recomposition", label: "Body Recomposition", description: "Aims to build muscle and lose fat simultaneously with high protein and training" },
+  { value: "lose_fat", label: "Lose Fat", description: "Calorie deficit to shed fat", icon: TrendingDown },
+  { value: "build_muscle", label: "Build Lean Muscle", description: "Surplus for muscle growth", icon: Dumbbell },
+  { value: "maintain", label: "Maintain Weight", description: "Balance energy in and out", icon: Scale },
+  { value: "clean_bulk", label: "Clean Bulk", description: "Moderate surplus, minimal fat", icon: Salad },
+  { value: "aggressive_bulk", label: "Aggressive Bulk", description: "Max surplus for fast gains", icon: Beef },
+  { value: "gain_weight", label: "Gain Weight", description: "Healthy weight increase", icon: TrendingUp },
+  { value: "improve_health", label: "Improve Health", description: "Nutrient-dense, balanced macros", icon: Heart },
+  { value: "recomposition", label: "Body Recomp", description: "Build muscle, lose fat", icon: RefreshCw },
 ]
 
 const weightLossRateOptions = [
@@ -180,17 +181,10 @@ const ethnicityOptions = [
 ]
 
 export function Calculator() {
-  console.log("Calculator component rendering")
-
   const [step, setStep] = useState(1)
   const [results, setResults] = useState<any>(null)
   const [ethnicityAdjustmentApplied, setEthnicityAdjustmentApplied] = useState(false)
   const totalSteps = 4
-
-  // Check if ResultsDisplay is available
-  useEffect(() => {
-    console.log("ResultsDisplay component available:", typeof ResultsDisplay)
-  }, [])
 
   const defaultValues: Partial<CalculatorFormValues> = {
     sex: undefined,
@@ -227,7 +221,6 @@ export function Calculator() {
   const watchActivityLevel = form.watch("activityLevel")
   const watchExerciseFrequency = form.watch("exerciseFrequency")
   const watchTrainingExperience = form.watch("trainingExperience")
-  const watchGoalSelection = form.watch("goal")
   const watchWeightLossRate = form.watch("weightLossRate")
   const watchWeightGainRate = form.watch("weightGainRate")
   const watchDietType = form.watch("dietType")
@@ -251,8 +244,6 @@ export function Calculator() {
   }
 
   const onSubmit: SubmitHandler<CalculatorFormValues> = (data) => {
-    console.log("Form Submitted", data)
-
     // Lazy load calculation functions
     import("../lib/calculator")
       .then((calculatorModule) => {
@@ -406,7 +397,6 @@ export function Calculator() {
           metrics,
         }
 
-        console.log("Calculation results:", resultsData)
         setResults(resultsData)
         setStep(totalSteps + 1) // Move to results step
       })
@@ -442,7 +432,7 @@ export function Calculator() {
                 isCurrent
                   ? "border-primary bg-primary/10 text-primary"
                   : isCompleted
-                  ? "border-green-500 bg-green-500/10 text-green-600"
+                  ? "border-primary bg-primary/10 text-primary"
                   : "border-border bg-card text-muted-foreground"
               }`}
             >
@@ -454,6 +444,7 @@ export function Calculator() {
           </div>
         )
       })}
+      <Progress value={((step - 1) / (totalSteps - 1)) * 100} className="h-1.5 mt-4" />
     </div>
   )
 
@@ -869,29 +860,35 @@ export function Calculator() {
                               <span className="text-destructive ml-1">*</span>
                               <InfoTooltip content="Select the main objective for your nutrition plan. This determines whether you aim for a calorie deficit, surplus, or maintenance." />
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="mt-1">
-                                  <SelectValue placeholder="Select your primary goal">
-                                     {watchGoalSelection ? goalOptions.find(option => option.value === watchGoalSelection)?.label : "Select your primary goal"}
-                                  </SelectValue>
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent side="bottom" className="w-[var(--radix-select-trigger-width)] max-h-[300px]">
-                                {goalOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value} className="flex-shrink-0">
-                                    <div className="w-full pr-4">
-                                      <div className="font-medium mb-0.5">{option.label}</div>
-                                      {option.description && (
-                                        <div className="text-xs text-muted-foreground hyphens-auto break-words">
-                                          {option.description}
-                                        </div>
-                                      )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                              {goalOptions.map((option) => {
+                                const isSelected = field.value === option.value
+                                const Icon = option.icon
+                                return (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => field.onChange(option.value)}
+                                    className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                                      isSelected
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                                    }`}
+                                  >
+                                    <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between">
+                                        <span className={`font-medium text-sm ${isSelected ? "text-primary" : "text-foreground"}`}>
+                                          {option.label}
+                                        </span>
+                                        {isSelected && <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />}
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{option.description}</p>
                                     </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  </button>
+                                )
+                              })}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}

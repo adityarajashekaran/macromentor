@@ -1,11 +1,22 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Outfit, DM_Sans } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { MotionProvider } from "@/components/animations/motion-context"
+import { Toaster } from "@/components/ui/sonner"
 
-const inter = Inter({ subsets: ["latin"] })
+const outfit = Outfit({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
+})
+
+const dmSans = DM_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "MacroMentor - Advanced Nutrition Calculator",
@@ -20,16 +31,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${outfit.variable} ${dmSans.variable} font-body`}>
         <ThemeProvider defaultTheme="system" storageKey="macromentor-theme">
           <MotionProvider>
             {children}
           </MotionProvider>
         </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   )
 }
-
-
-import './globals.css'

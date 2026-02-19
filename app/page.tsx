@@ -67,13 +67,6 @@ const ScienceBadge = dynamic(
   }
 )
 
-const ScrollIndicator = dynamic(
-  () => import('@/components/animations/scroll-indicator').then(mod => mod.ScrollIndicator),
-  { 
-    ssr: false 
-  }
-)
-
 const StickyCTA = dynamic(
   () => import('@/components/sticky-cta').then(mod => mod.StickyCTA),
   { 
@@ -155,8 +148,8 @@ export default function Home() {
                 <AnimatedText 
                   text="Transform Your Body with Precision Nutrition" 
                   as="h1"
-                  className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide bg-gradient-to-r from-primary to-blue-500 dark:from-primary dark:to-blue-400 bg-clip-text text-transparent leading-tight"
-                  staggerChildren={performanceConfig?.animationComplexity !== 'minimal'}
+                  className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide bg-gradient-to-r from-primary to-gradient-end bg-clip-text text-transparent leading-tight"
+                  staggerChildren={false}
                 />
                 
                 <div className="flex justify-center mt-4 mb-4">
@@ -179,7 +172,7 @@ export default function Home() {
                   <div className="flex justify-center">
                     <Button
                       size="lg"
-                      className="w-full sm:max-w-md mx-auto px-8 py-6 sm:py-4 text-base md:text-lg bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-75"
+                      className="w-full sm:max-w-md mx-auto px-8 py-6 sm:py-4 text-base md:text-lg bg-gradient-to-r from-primary to-gradient-end hover:from-primary/90 hover:to-gradient-end/90 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg disabled:opacity-75"
                       disabled={isLoading}
                       onClick={handleGetStartedClick}
                     >
@@ -196,9 +189,6 @@ export default function Home() {
                   <p className="text-xs text-muted-foreground">Free, instant results. No account required.</p>
                 </Stack>
                 
-                <div className="mt-4">
-                  <ScrollIndicator />
-                </div>
               </Stack>
             </Section>
 

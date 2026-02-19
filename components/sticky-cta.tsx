@@ -43,7 +43,7 @@ export function StickyCTA({
     <AnimatePresence>
       {isVisible && (
         <m.div 
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 md:hidden"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
@@ -65,7 +65,7 @@ export function StickyCTA({
 
           <Button
             onClick={onClick}
-            className="bg-gradient-to-r from-primary to-blue-500 hover:from-primary/90 hover:to-blue-500/90 dark:from-primary dark:to-blue-400 dark:hover:from-primary/90 dark:hover:to-blue-400/90 shadow-lg"
+            className="bg-gradient-to-r from-primary to-gradient-end hover:from-primary/90 hover:to-gradient-end/90 shadow-lg"
             size="lg"
           >
             {text}

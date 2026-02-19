@@ -23,9 +23,9 @@ export function ScienceBadge({
   // If reduced motion is preferred, show a static badge
   if (prefersReducedMotion) {
     return (
-      <div className={`inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-xs ${className}`}>
-        <FlaskConical className="mr-1 h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-        <span className="text-blue-700 dark:text-blue-300 font-medium">{text}</span>
+      <div className={`inline-flex items-center rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs ${className}`}>
+        <FlaskConical className="mr-1 h-3.5 w-3.5 text-primary" />
+        <span className="text-primary font-medium">{text}</span>
       </div>
     );
   }
@@ -87,17 +87,17 @@ export function ScienceBadge({
   return (
     <m.div
       ref={ref as any}
-      className={`relative inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-xs ${className}`}
+      className={`relative inline-flex items-center rounded-full bg-primary/10 dark:bg-primary/20 px-2 py-0.5 text-xs ${className}`}
       variants={badgeVariants}
       initial="hidden"
       animate={isVisible ? "visible" : "hidden"}
     >
       <m.div variants={iconVariants} className="flex items-center">
-        <FlaskConical className="mr-1 h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+        <FlaskConical className="mr-1 h-3.5 w-3.5 text-primary" />
       </m.div>
       
       <m.span 
-        className="text-blue-700 dark:text-blue-300 font-medium"
+        className="text-primary font-medium"
         variants={textVariants}
       >
         {text}
