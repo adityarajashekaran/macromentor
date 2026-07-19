@@ -40,6 +40,126 @@ function Stat({ label, value, unit }: { label: string; value: string; unit?: str
   )
 }
 
+/**
+ * The energy map: one axis showing the no-go zone below BMR, BMR itself,
+ * the target, and TDEE — so the deficit is a *place*, not three numbers.
+ */
+function EnergyScale({ r }: { r: CalculationResults }) {
+  const floor = r.userProfile.sex === "female" ? 1200 : 1500
+  const isDeficit = r.deficitSurplus < 0
+  const isSurplus = r.deficitSurplus > 0
+
+  const lo = Math.min(r.bmr, r.calorieTarget, r.tdee)
+  const hi = Math.max(r.tdee, r.calorieTarget)
+  const span = Math.max(hi - lo, 300)
+  const min = lo - span * 0.35
+  const max = hi + span * 0.12
+  const pos = (x: number) => Math.min(98, Math.max(2, ((x - min) / (max - min)) * 100))
+
+  const bandLeft = pos(Math.min(r.calorieTarget, r.tdee))
+  const bandWidth = Math.abs(pos(r.tdee) - pos(r.calorieTarget))
+
+  return (
+    <div className="mt-10 rounded-lg border border-border bg-card p-6">
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-heading text-xl font-bold">Where your target sits</h2>
+        <p className="eyebrow text-muted-foreground">the energy map</p>
+      </div>
+
+      {/* Track */}
+      <div className="relative mt-10 mb-8">
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-border/40">
+          {/* no-go zone: below resting burn */}
+          <div
+            className="absolute inset-y-0 left-0"
+            style={{
+              width: `${pos(r.bmr)}%`,
+              background:
+                "repeating-linear-gradient(135deg, hsl(var(--pop-orange) / 0.55) 0 5px, transparent 5px 10px)",
+            }}
+          />
+          {/* deficit / surplus band between target and TDEE */}
+          {bandWidth > 0.5 && (
+            <div
+              className="absolute inset-y-0"
+              style={{
+                left: `${bandLeft}%`,
+                width: `${bandWidth}%`,
+                background: isDeficit ? "var(--color-kcal)" : "hsl(var(--pop-gold) / 0.85)",
+                opacity: 0.85,
+              }}
+            />
+          )}
+        </div>
+
+        {/* markers */}
+        {[
+          { x: r.bmr, label: "BMR", cls: "border-2 border-[hsl(var(--pop-orange))] bg-background", size: "h-4 w-4" },
+          ...(isDeficit || isSurplus
+            ? [{ x: r.tdee, label: "TDEE", cls: "border-2 border-foreground/60 bg-background", size: "h-4 w-4" }]
+            : []),
+          { x: r.calorieTarget, label: "TARGET", cls: "bg-[var(--color-kcal)] ring-4 ring-[var(--color-kcal)]/25", size: "h-5 w-5" },
+        ].map((m) => (
+          <div
+            key={m.label}
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${pos(m.x)}%` }}
+          >
+            <div className={`rounded-full ${m.size} ${m.cls}`} />
+            <p
+              className={`eyebrow absolute left-1/2 -translate-x-1/2 whitespace-nowrap ${
+                m.label === "TARGET" ? "-top-7 text-[var(--color-kcal)]" : "top-5 text-muted-foreground"
+              }`}
+            >
+              {m.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Legend rows */}
+      <div className="mt-12 space-y-3 border-t border-border pt-5">
+        <div className="flex gap-3">
+          <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full bg-[var(--color-kcal)] ring-4 ring-[var(--color-kcal)]/25" />
+          <p className="text-sm leading-relaxed">
+            <strong className="font-mono tnum">{r.calorieTarget.toLocaleString()} kcal — your target.</strong>{" "}
+            <span className="text-muted-foreground">
+              {isDeficit &&
+                `The ${Math.abs(r.deficitSurplus).toLocaleString()}-kcal gap to maintenance is your deficit — sized to move fat while keeping muscle and hormones on side.`}
+              {isSurplus &&
+                `Sits ${r.deficitSurplus.toLocaleString()} kcal above maintenance — growth costs energy, and that's the bill.`}
+              {!isDeficit && !isSurplus && "Matched to your maintenance — energy in equals energy out."}
+            </span>
+          </p>
+        </div>
+        {(isDeficit || isSurplus) && (
+          <div className="flex gap-3">
+            <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-foreground/60" />
+            <p className="text-sm leading-relaxed">
+              <strong className="font-mono tnum">{r.tdee.toLocaleString()} kcal — maintenance (TDEE).</strong>{" "}
+              <span className="text-muted-foreground">
+                What a typical day actually burns. Eat here and the scale holds still.
+              </span>
+            </p>
+          </div>
+        )}
+        <div className="flex gap-3">
+          <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[hsl(var(--pop-orange))]" />
+          <p className="text-sm leading-relaxed">
+            <strong className="font-mono tnum">{r.bmr.toLocaleString()} kcal — resting burn (BMR).</strong>{" "}
+            <span className="text-muted-foreground">
+              What your organs spend if you never left bed. Everything striped below it is no-go:
+              eat under your resting burn for long and the body starts paying with muscle, downshifts
+              your metabolism, and lets hormones slide — which is why crash diets rebound.
+              {isDeficit && ` Your hard floor is ${floor.toLocaleString()} kcal, and the deficit is capped well before the stripes.`}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function WarningPill({
   tone,
   children,
@@ -97,16 +217,15 @@ export function Results({
         </p>
         <p className="eyebrow mt-2 text-muted-foreground">kcal per day</p>
         {hasAdjustment ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            That&apos;s{" "}
-            <span className="font-mono font-medium text-foreground tnum">
+          <p className="mt-4 text-sm text-muted-foreground">
+            <span className="mr-1.5 inline-block rounded-full bg-[var(--color-kcal)]/15 px-3 py-1 font-mono font-medium text-[var(--color-kcal)] tnum">
               {sign}
               {Math.abs(r.deficitSurplus).toLocaleString()} kcal
-            </span>{" "}
+            </span>
             versus the {r.tdee.toLocaleString()} kcal you burn in a typical day.
           </p>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-muted-foreground">
             Matched to the {r.tdee.toLocaleString()} kcal you burn in a typical day.
           </p>
         )}
@@ -141,8 +260,11 @@ export function Results({
         </div>
       )}
 
+      {/* ——— Energy map ——— */}
+      <EnergyScale r={r} />
+
       {/* ——— Macros ——— */}
-      <div className="mt-10 rounded-lg border border-border bg-card p-6">
+      <div className="mt-6 rounded-lg border border-border bg-card p-6">
         <div className="flex items-baseline justify-between">
           <h2 className="font-heading text-xl font-bold">Daily macros</h2>
           <p className="eyebrow text-muted-foreground">grams per day</p>
@@ -164,15 +286,22 @@ export function Results({
           {MACRO_META.map((m) => {
             const macro = r.macros[m.key]
             return (
-              <div key={m.key} className="rounded-md border border-border p-4">
+              <div
+                key={m.key}
+                className="rounded-md border border-border p-4"
+                style={{ borderTop: `3px solid var(${m.colorVar})` }}
+              >
                 <p className="flex items-center gap-2 text-sm font-medium">
                   <span
-                    className="inline-block h-2.5 w-2.5 rounded-[2px]"
+                    className="inline-block h-3 w-3 rounded-full"
                     style={{ background: `var(${m.colorVar})` }}
                   />
                   {m.label}
                 </p>
-                <p className="mt-2 font-heading text-3xl font-bold tnum">
+                <p
+                  className="mt-2 font-heading text-4xl font-bold tnum"
+                  style={{ color: `var(${m.colorVar})` }}
+                >
                   {macro.grams}
                   <span className="ml-0.5 text-base font-normal text-muted-foreground">g</span>
                 </p>
@@ -198,22 +327,13 @@ export function Results({
         </p>
       </div>
 
-      {/* ——— The numbers underneath ——— */}
-      <div
-        className={`mt-6 grid grid-cols-2 gap-2.5 ${
-          r.metrics.lbm !== undefined ? "sm:grid-cols-5" : "sm:grid-cols-4"
-        }`}
-      >
-        <Stat label="BMR · at rest" value={r.bmr.toLocaleString()} unit="kcal" />
-        <Stat label="TDEE · burned daily" value={r.tdee.toLocaleString()} unit="kcal" />
-        <Stat
-          label="vs maintenance"
-          value={hasAdjustment ? `${sign}${Math.abs(r.deficitSurplus).toLocaleString()}` : "±0"}
-          unit="kcal"
-        />
+      {/* ——— Body metrics (energy numbers live on the map above) ——— */}
+      <div className="mt-6 grid grid-cols-2 gap-2.5">
         <Stat label="BMI" value={r.metrics.bmi.toFixed(1)} />
-        {r.metrics.lbm !== undefined && (
+        {r.metrics.lbm !== undefined ? (
           <Stat label="Lean mass" value={r.metrics.lbm.toFixed(1)} unit="kg" />
+        ) : (
+          <Stat label="Weight" value={r.userProfile.weight.toLocaleString()} unit="kg" />
         )}
       </div>
 
@@ -238,7 +358,7 @@ export function Results({
             [
               "03",
               `Goal adjustment: ${hasAdjustment ? `${sign}${Math.abs(r.deficitSurplus).toLocaleString()} kcal` : "none"}`,
-              `${r.goalDescription} sets the size of the change — with safety caps on how far it can go.`,
+              `${r.goalDescription} sets the size of the change — capped so your target stays out of the striped zone on the map above.`,
             ],
             [
               "04",

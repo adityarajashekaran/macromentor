@@ -63,10 +63,11 @@
     --pop-gold: 38 75% 67%; /* #eabc6e */
     --pop-navy: 221 27% 79%; /* #bbc4d8 — pale steel on dark */
 
-    --color-protein: #bbc4d8;
-    --color-carbs: #eabc6e;
-    --color-fat: #e77f3e;
-    --color-kcal: #56b6bb;
+    /* data colors get extra chroma in dark mode so they actually pop */
+    --color-protein: #8fb3f2;
+    --color-carbs: #f2c05e;
+    --color-fat: #f5854a;
+    --color-kcal: #5fd6db;
   }
 }
 
