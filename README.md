@@ -22,6 +22,10 @@ One method I arrived at the hard way: write the tests for each section first, th
 
 Stack: Next.js, React, TypeScript, Tailwind, Radix UI, Vitest.
 
+## License
+
+MIT, see [LICENSE](LICENSE). Clone it, fork it, build on it.
+
 ---
 
 Part of [horizonfall.com](https://horizonfall.com). The full story is at **[horizonfall.com/projects/macromentor](https://horizonfall.com/projects/macromentor)**.
