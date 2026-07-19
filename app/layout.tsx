@@ -1,27 +1,59 @@
 import type React from "react"
-import type { Metadata } from "next"
-import { Outfit, DM_Sans } from "next/font/google"
+import type { Metadata, Viewport } from "next"
+import { Funnel_Display, Onest, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { MotionProvider } from "@/components/animations/motion-context"
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 import { Toaster } from "@/components/ui/sonner"
 
-const outfit = Outfit({
+const funnel = Funnel_Display({
   variable: "--font-heading",
   subsets: ["latin"],
   display: "swap",
 })
 
-const dmSans = DM_Sans({
+const onest = Onest({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 })
 
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+})
+
 export const metadata: Metadata = {
-  title: "MacroMentor - Advanced Nutrition Calculator",
-  description: "Calculate your personalized calorie and macronutrient needs based on your body composition, activity level, and goals.",
-  generator: 'v0.dev'
+  title: "MacroMentor — Calorie, Macro & TDEE Calculator",
+  description:
+    "Free calorie and macro calculator that shows its working. Picks the most accurate BMR formula for your data (Cunningham, Katch-McArdle, or Mifflin-St Jeor), calculates your TDEE from real activity, and sets protein, carb and fat targets with safety caps built in. No account, nothing stored.",
+  keywords: [
+    "macro calculator",
+    "calorie calculator",
+    "TDEE calculator",
+    "BMR calculator",
+    "macronutrient calculator",
+    "cutting calories",
+    "bulking calories",
+  ],
+  metadataBase: new URL("https://macromentor.horizonfall.com"),
+  openGraph: {
+    title: "MacroMentor — know exactly how much to eat",
+    description:
+      "A calorie and macro calculator that picks the right formula for your body and shows every step of the math.",
+    url: "https://macromentor.horizonfall.com",
+    siteName: "MacroMentor",
+    type: "website",
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5eee0" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0b10" },
+  ],
 }
 
 export default function RootLayout({
@@ -31,11 +63,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${dmSans.variable} font-body`}>
-        <ThemeProvider defaultTheme="system" storageKey="macromentor-theme">
-          <MotionProvider>
-            {children}
-          </MotionProvider>
+      <body className={`${funnel.variable} ${onest.variable} ${jetbrainsMono.variable} font-body`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <div className="flex min-h-screen flex-col">
+            <SiteHeader />
+            <div className="flex-1">{children}</div>
+            <SiteFooter />
+          </div>
         </ThemeProvider>
         <Toaster />
       </body>

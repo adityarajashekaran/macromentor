@@ -4,58 +4,69 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 168 55% 38%;
-    --primary-foreground: 0 0% 100%;
-    --gradient-end: 180 45% 55%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* horizonfall family tokens — light "parchment" theme */
+    --background: 40 51% 92%; /* #f5eee0 */
+    --foreground: 24 29% 7%; /* #16100c */
+    --card: 38 36% 86%; /* #e9e0d0 */
+    --card-foreground: 24 29% 7%;
+    --popover: 40 51% 92%;
+    --popover-foreground: 24 29% 7%;
+    --primary: 183 79% 23%; /* #0c6468 — MacroMentor leads teal */
+    --primary-foreground: 40 51% 92%;
+    --secondary: 38 36% 86%;
+    --secondary-foreground: 24 29% 7%;
+    --muted: 38 36% 86%;
+    --muted-foreground: 25 6% 36%; /* #635c57 */
+    --accent: 39 30% 82%;
+    --accent-foreground: 24 29% 7%;
+    --destructive: 354 100% 45%; /* #e50018 */
+    --destructive-foreground: 40 51% 92%;
+    --border: 39 18% 75%; /* #cbc3b4 */
+    --input: 39 18% 75%;
+    --ring: 183 79% 23%;
     --radius: 0.5rem;
-    /* Recharts Colors (Light Mode) */
-    --color-protein: #059669; /* emerald-600 */
-    --color-carbs: #2563eb;   /* blue-600 */
-    --color-fat: #d97706;     /* amber-600 */
+
+    /* pop palette (family: terracotta / gold / navy) */
+    --pop-orange: 20 52% 45%; /* #bc5a29 */
+    --pop-gold: 39 50% 52%; /* #c29647 */
+    --pop-navy: 222 54% 19%; /* #17274c */
+
+    /* macro colors (charts, bars) */
+    --color-protein: #17274c;
+    --color-carbs: #c29647;
+    --color-fat: #bc5a29;
+    --color-kcal: #0c6468;
   }
 
   .dark {
-    --background: 220 20% 6%;
-    --foreground: 210 40% 98%;
-    --card: 220 18% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 18% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 168 50% 48%;
-    --primary-foreground: 0 0% 100%;
-    --gradient-end: 180 40% 45%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 220 15% 13%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 15% 15%;
-    --input: 220 15% 15%;
-    --ring: 212.7 26.8% 83.9%;
-    /* Recharts Colors (Dark Mode) - Using slightly lighter shades */
-    --color-protein: #34d399; /* emerald-400 */
-    --color-carbs: #60a5fa;   /* blue-400 */
-    --color-fat: #fbbf24;     /* amber-400 */
+    --background: 230 23% 5%; /* #0a0b10 */
+    --foreground: 40 23% 87%; /* #e6e1d7 */
+    --card: 240 14% 10%; /* #15151c */
+    --card-foreground: 40 23% 87%;
+    --popover: 240 14% 10%;
+    --popover-foreground: 40 23% 87%;
+    --primary: 183 43% 54%; /* #56b6bb */
+    --primary-foreground: 230 23% 5%;
+    --secondary: 240 14% 10%;
+    --secondary-foreground: 40 23% 87%;
+    --muted: 240 14% 10%;
+    --muted-foreground: 235 6% 54%; /* #848591 */
+    --accent: 237 13% 14%;
+    --accent-foreground: 40 23% 87%;
+    --destructive: 358 100% 69%; /* #ff6367 */
+    --destructive-foreground: 230 23% 5%;
+    --border: 235 13% 18%; /* #272833 */
+    --input: 235 13% 18%;
+    --ring: 183 43% 54%;
+
+    --pop-orange: 23 78% 57%; /* #e77f3e */
+    --pop-gold: 38 75% 67%; /* #eabc6e */
+    --pop-navy: 221 27% 79%; /* #bbc4d8 — pale steel on dark */
+
+    --color-protein: #bbc4d8;
+    --color-carbs: #eabc6e;
+    --color-fat: #e77f3e;
+    --color-kcal: #56b6bb;
   }
 }
 
@@ -65,8 +76,92 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body), system-ui, sans-serif;
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-heading), system-ui, sans-serif;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+}
+
+@layer components {
+  /* mono uppercase micro-label — the family's strongest tic */
+  .eyebrow {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /* film grain overlay — apply to a relatively-positioned element */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* evidence link — mono with dotted accent underline */
+  .ev-link {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.8rem;
+    text-decoration: underline dotted hsl(var(--primary));
+    text-underline-offset: 3px;
+  }
+  .ev-link:hover {
+    text-decoration-style: solid;
+  }
+
+  /* card hover lift, family style */
+  .lift {
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease;
+  }
+  .lift:hover {
+    border-color: hsl(var(--primary));
+    transform: translateY(-2px);
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading), system-ui, sans-serif;
+  }
+  .font-mono {
+    font-family: var(--font-mono), monospace;
+  }
+  /* tabular figures for aligned numbers */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
   }
 }
