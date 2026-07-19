@@ -162,14 +162,48 @@
 }
 
 @media print {
+  /* Zero page margin: the browser's own date/URL header and footer render
+     into the margin area, so with none they disappear entirely. Our fixed
+     letterhead + footline (below) replace them on every page. */
   @page {
-    margin: 12mm 14mm;
+    margin: 0;
   }
 
   header,
   footer,
   .no-print {
     display: none !important;
+  }
+
+  /* Running letterhead + footline — position:fixed repeats on each printed
+     page; the .print-headspace/.print-footspace table spacers reserve the
+     room so content never runs underneath. */
+  .print-chrome-top,
+  .print-chrome-bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    background: #fff;
+    padding-left: 14mm;
+    padding-right: 14mm;
+  }
+  .print-chrome-top {
+    top: 0;
+    padding-top: 8mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .print-chrome-bottom {
+    bottom: 0;
+    padding-top: 3mm;
+    padding-bottom: 8mm;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .print-headspace {
+    height: 24mm;
+  }
+  .print-footspace {
+    height: 18mm;
   }
 
   /* Always print in the light palette — regardless of on-screen theme.
@@ -220,7 +254,7 @@
   }
 
   main {
-    padding: 0 !important;
+    padding: 0 14mm !important;
   }
 
   /* Never slice a card across pages; keep headings with their content */

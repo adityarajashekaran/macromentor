@@ -5,7 +5,13 @@ import { Copy, Printer, Pencil, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { formatSummary, type CalculationResults } from "./compute"
+import { formatSummary, optionLabel, goalWithRate, type CalculationResults } from "./compute"
+import {
+  sexOptions,
+  activityLevelOptions,
+  trainingExperienceOptions,
+  dietTypeOptions,
+} from "./schema"
 import { useUnits } from "@/components/units-provider"
 import {
   formatEnergy,
@@ -13,8 +19,10 @@ import {
   formatWeight,
   formatHeight,
   perKgToPerLb,
+  formatLength,
   type EnergyUnit,
   type WeightUnit,
+  type UnitPrefs,
 } from "@/lib/units"
 
 const MACRO_META = [
@@ -179,6 +187,44 @@ function EnergyScale({ r, energy }: { r: CalculationResults; energy: EnergyUnit 
   )
 }
 
+/**
+ * Every answer that shaped the plan, in one card — so a coach or client
+ * reading the page (or the PDF) can see exactly what it was built from.
+ */
+function InputsCard({ r, units }: { r: CalculationResults; units: UnitPrefs }) {
+  const p = r.userProfile
+  const cells: [string, string][] = [
+    ["Goal", goalWithRate(p, r.goalDescription)],
+    ["Activity", optionLabel(activityLevelOptions, p.activityLevel)],
+    ["Lifting", optionLabel(trainingExperienceOptions, p.trainingExperience)],
+    ["Diet", optionLabel(dietTypeOptions, p.dietType)],
+    ["Sex", optionLabel(sexOptions, p.sex)],
+    ["Age", `${p.age} yrs`],
+    ["Height", formatHeight(p.height, units.height)],
+    ["Weight", formatWeight(p.weight, units.weight)],
+  ]
+  if (p.bodyFat !== undefined) cells.push(["Body fat", `${p.bodyFat}%`])
+  if (p.waistCircumference !== undefined)
+    cells.push(["Waist", formatLength(p.waistCircumference, units.waist)])
+
+  return (
+    <div className="print-block mt-8 rounded-lg border border-border bg-card p-6">
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-heading text-xl font-bold">Built from your answers</h2>
+        <p className="eyebrow text-muted-foreground">the inputs</p>
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+        {cells.map(([label, value]) => (
+          <div key={label} className={label === "Goal" ? "col-span-2" : ""}>
+            <p className="eyebrow text-muted-foreground">{label}</p>
+            <p className="mt-1 text-sm font-medium">{value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function WarningPill({
   tone,
   children,
@@ -285,17 +331,41 @@ export function Results({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="mx-auto max-w-3xl"
     >
-      {/* ——— Print-only letterhead ——— */}
-      <div className="mb-8 hidden items-baseline justify-between border-b border-border pb-4 print:flex">
+      {/* ——— Print letterhead + footline: fixed, so they repeat on every page ——— */}
+      <div className="print-chrome-top hidden items-baseline justify-between print:flex">
         <p className="font-heading text-xl font-bold tracking-tight">
           macromentor<span className="text-primary">.</span>
         </p>
         <p className="eyebrow text-muted-foreground">
-          macromentor.horizonfall.com ·{" "}
+          {r.goalDescription} plan ·{" "}
           {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
         </p>
       </div>
+      <div className="print-chrome-bottom hidden items-baseline justify-between print:flex">
+        <p className="eyebrow text-muted-foreground">macromentor.horizonfall.com</p>
+        <p className="eyebrow text-muted-foreground">informational guidance · not medical advice</p>
+      </div>
 
+      {/* Screen: plain divs. Print: a real table, whose head/foot spacer rows
+          repeat on every page and reserve the room the fixed chrome sits in. */}
+      <table className="block w-full print:table">
+        <thead className="hidden print:table-header-group">
+          <tr>
+            <td>
+              <div className="print-headspace" />
+            </td>
+          </tr>
+        </thead>
+        <tfoot className="hidden print:table-footer-group">
+          <tr>
+            <td>
+              <div className="print-footspace" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody className="block print:table-row-group">
+          <tr className="block print:table-row">
+            <td className="block print:table-cell">
       {/* ——— Unit switch ——— */}
       <div className="no-print mb-6 flex justify-center">
         <UnitSwitch weightUnit={weightUnit} energy={energy} setUnits={setUnits} />
@@ -352,6 +422,9 @@ export function Results({
           )}
         </div>
       )}
+
+      {/* ——— What the plan was built from ——— */}
+      <InputsCard r={r} units={units} />
 
       {/* ——— Energy map ——— */}
       <EnergyScale r={r} energy={energy} />
@@ -475,12 +548,6 @@ export function Results({
             </li>
           ))}
         </ol>
-        <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
-          Profile: {r.userProfile.age}y · {r.userProfile.sex} ·{" "}
-          {formatHeight(r.userProfile.height, units.height)} ·{" "}
-          {formatWeight(r.userProfile.weight, weightUnit)}
-          {r.userProfile.bodyFat !== undefined && <> · {r.userProfile.bodyFat}% body fat</>}
-        </p>
       </div>
 
       {/* ——— Micronutrients ——— */}
@@ -547,11 +614,16 @@ export function Results({
         </Button>
       </div>
 
-      <p className="mt-8 text-center text-xs leading-relaxed text-muted-foreground">
+      {/* In print the running footline carries this, so screen-only */}
+      <p className="no-print mt-8 text-center text-xs leading-relaxed text-muted-foreground">
         Informational tool, not medical advice. Talk to a professional before major dietary changes.
         <br />
         Everything above was computed in your browser — your inputs were never sent anywhere.
       </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </motion.div>
   )
 }

@@ -10,7 +10,31 @@ import {
   formatHeight,
   type UnitPrefs,
 } from "@/lib/units"
-import type { CalculatorFormValues } from "./schema"
+import {
+  activityLevelOptions,
+  trainingExperienceOptions,
+  dietTypeOptions,
+  weightLossRateOptions,
+  weightGainRateOptions,
+  type CalculatorFormValues,
+} from "./schema"
+
+/** Display label for an option value, e.g. "moderate" → "Moderately active". */
+export function optionLabel(
+  options: readonly { value: string; label: string }[],
+  value: string,
+): string {
+  return options.find((o) => o.value === value)?.label ?? value
+}
+
+/** "Fat loss · moderate pace" — goal plus the chosen rate when one applies. */
+export function goalWithRate(p: CalculationResults["userProfile"], goalDescription: string): string {
+  if (p.goal === "lose_fat")
+    return `${goalDescription} · ${optionLabel(weightLossRateOptions, p.weightLossRate).toLowerCase()} pace`
+  if (p.goal === "gain_weight")
+    return `${goalDescription} · ${optionLabel(weightGainRateOptions, p.weightGainRate).toLowerCase()} pace`
+  return goalDescription
+}
 
 export interface CalculationResults {
   bmr: number
@@ -28,8 +52,12 @@ export interface CalculationResults {
     weight: number
     bodyFat?: number
     activityLevel: CalculatorFormValues["activityLevel"]
+    trainingExperience: CalculatorFormValues["trainingExperience"]
     goal: CalculatorFormValues["goal"]
+    weightLossRate: CalculatorFormValues["weightLossRate"]
+    weightGainRate: CalculatorFormValues["weightGainRate"]
     dietType: CalculatorFormValues["dietType"]
+    waistCircumference?: number
   }
   macros: ReturnType<typeof calculateMacros>
   micronutrients: {
@@ -157,8 +185,12 @@ export function buildResults(data: CalculatorFormValues): CalculationResults {
       weight: data.weight,
       bodyFat: data.bodyFat,
       activityLevel: data.activityLevel,
+      trainingExperience: data.trainingExperience,
       goal: data.goal,
+      weightLossRate: data.weightLossRate,
+      weightGainRate: data.weightGainRate,
       dietType: data.dietType,
+      waistCircumference: data.waistCircumference,
     },
     macros,
     micronutrients,
@@ -172,8 +204,9 @@ export function formatSummary(r: CalculationResults, units: UnitPrefs): string {
   const { energy, weight, height } = units
   const sign = r.deficitSurplus > 0 ? "+" : "-"
   const deficitAbs = formatEnergy(Math.abs(r.deficitSurplus), energy)
+  const p = r.userProfile
   return [
-    `MacroMentor plan — ${r.goalDescription}`,
+    `MacroMentor plan — ${goalWithRate(p, r.goalDescription)}`,
     ``,
     `Daily target: ${formatEnergy(r.calorieTarget, energy)} (${sign}${deficitAbs} vs maintenance)`,
     `Protein: ${r.macros.protein.grams} g · Carbs: ${r.macros.carbs.grams} g · Fat: ${r.macros.fat.grams} g`,
@@ -181,7 +214,8 @@ export function formatSummary(r: CalculationResults, units: UnitPrefs): string {
     `BMR ${formatEnergy(r.bmr, energy)} (${r.bmrMethod})`,
     `TDEE ${formatEnergy(r.tdee, energy)} (activity ×${r.palMultiplier})`,
     `BMI ${r.metrics.bmi}${r.metrics.lbm ? ` · Lean mass ${formatWeight(r.metrics.lbm, weight)}` : ""}`,
-    `Profile: ${r.userProfile.age}y · ${r.userProfile.sex} · ${formatHeight(r.userProfile.height, height)} · ${formatWeight(r.userProfile.weight, weight)}`,
+    `Profile: ${p.age}y · ${p.sex} · ${formatHeight(p.height, height)} · ${formatWeight(p.weight, weight)}${p.bodyFat !== undefined ? ` · ${p.bodyFat}% body fat` : ""}`,
+    `Lifestyle: ${optionLabel(activityLevelOptions, p.activityLevel)} · lifting: ${optionLabel(trainingExperienceOptions, p.trainingExperience).toLowerCase()} · ${optionLabel(dietTypeOptions, p.dietType).toLowerCase()}`,
     ``,
     `macromentor.horizonfall.com`,
   ].join("\n")
