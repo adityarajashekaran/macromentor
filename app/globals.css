@@ -160,9 +160,81 @@
 }
 
 @media print {
+  @page {
+    margin: 12mm 14mm;
+  }
+
   header,
   footer,
   .no-print {
     display: none !important;
+  }
+
+  /* Always print in the light palette — regardless of on-screen theme.
+     White page, ink-friendly cards, exact brand colors for data. */
+  :root,
+  .dark {
+    --background: 0 0% 100%;
+    --foreground: 24 29% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 29% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 29% 7%;
+    --primary: 183 79% 23%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 38 36% 92%;
+    --secondary-foreground: 24 29% 7%;
+    --muted: 38 36% 94%;
+    --muted-foreground: 25 6% 32%;
+    --accent: 39 30% 90%;
+    --accent-foreground: 24 29% 7%;
+    --destructive: 354 100% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 39 18% 70%;
+    --input: 39 18% 70%;
+    --ring: 183 79% 23%;
+    --pop-orange: 20 52% 45%;
+    --pop-gold: 39 50% 45%;
+    --pop-navy: 222 54% 19%;
+    --color-protein: #17274c;
+    --color-carbs: #b8873a;
+    --color-fat: #bc5a29;
+    --color-kcal: #0c6468;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* next-themes sets inline color-scheme:dark; Chromium paints the PDF
+     canvas (incl. @page margins) black for it. !important beats inline. */
+  html {
+    color-scheme: light !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* Never slice a card across pages; keep headings with their content */
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  /* Motion wrappers can freeze mid-transform in the print snapshot */
+  [style*="transform"] {
+    transform: none !important;
+    opacity: 1 !important;
   }
 }

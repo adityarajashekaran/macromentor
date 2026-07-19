@@ -73,7 +73,7 @@ function EnergyScale({ r, energy }: { r: CalculationResults; energy: EnergyUnit 
   const bandWidth = Math.abs(pos(r.tdee) - pos(r.calorieTarget))
 
   return (
-    <div className="mt-10 rounded-lg border border-border bg-card p-6">
+    <div className="print-block mt-10 rounded-lg border border-border bg-card p-6">
       <div className="flex items-baseline justify-between">
         <h2 className="font-heading text-xl font-bold">Where your target sits</h2>
         <p className="eyebrow text-muted-foreground">the energy map</p>
@@ -285,17 +285,28 @@ export function Results({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="mx-auto max-w-3xl"
     >
+      {/* ——— Print-only letterhead ——— */}
+      <div className="mb-8 hidden items-baseline justify-between border-b border-border pb-4 print:flex">
+        <p className="font-heading text-xl font-bold tracking-tight">
+          macromentor<span className="text-primary">.</span>
+        </p>
+        <p className="eyebrow text-muted-foreground">
+          macromentor.horizonfall.com ·{" "}
+          {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+        </p>
+      </div>
+
       {/* ——— Unit switch ——— */}
       <div className="no-print mb-6 flex justify-center">
         <UnitSwitch weightUnit={weightUnit} energy={energy} setUnits={setUnits} />
       </div>
 
       {/* ——— Hero number ——— */}
-      <div className="text-center">
+      <div className="print-block text-center">
         <p className="eyebrow text-primary">
           Your plan · {r.goalDescription} · Tier 0{r.tier}
         </p>
-        <p className="mt-4 font-heading text-7xl font-extrabold tracking-tight tnum sm:text-8xl">
+        <p className="mt-4 font-heading text-7xl font-extrabold tracking-tight tnum sm:text-8xl print:text-6xl">
           {energyValue(r.calorieTarget, energy).toLocaleString("en-US")}
         </p>
         <p className="eyebrow mt-2 text-muted-foreground">{energy} per day</p>
@@ -318,7 +329,7 @@ export function Results({
       {(r.warnings.belowMinimum ||
         r.warnings.refeedRecommended ||
         r.warnings.ethnicityAdjustmentApplied) && (
-        <div className="mt-8 space-y-2.5">
+        <div className="print-block mt-8 space-y-2.5">
           {r.warnings.belowMinimum && (
             <WarningPill tone="destructive">
               <strong>This target sits below the safe floor</strong> (
@@ -346,7 +357,7 @@ export function Results({
       <EnergyScale r={r} energy={energy} />
 
       {/* ——— Macros ——— */}
-      <div className="mt-6 rounded-lg border border-border bg-card p-6">
+      <div className="print-block mt-6 rounded-lg border border-border bg-card p-6">
         <div className="flex items-baseline justify-between">
           <h2 className="font-heading text-xl font-bold">Daily macros</h2>
           <p className="eyebrow text-muted-foreground">grams per day</p>
@@ -414,7 +425,7 @@ export function Results({
       </div>
 
       {/* ——— Body metrics (energy numbers live on the map above) ——— */}
-      <div className="mt-6 grid grid-cols-2 gap-2.5">
+      <div className="print-block mt-6 grid grid-cols-2 gap-2.5">
         <Stat label="BMI" value={r.metrics.bmi.toFixed(1)} />
         {r.metrics.lbm !== undefined ? (
           <Stat label="Lean mass" value={formatWeight(r.metrics.lbm, weightUnit)} />
@@ -424,7 +435,7 @@ export function Results({
       </div>
 
       {/* ——— How it was calculated ——— */}
-      <div className="mt-6 rounded-lg border border-border bg-card p-6">
+      <div className="print-block mt-6 rounded-lg border border-border bg-card p-6">
         <h2 className="font-heading text-xl font-bold">How we got here</h2>
         <ol className="mt-4 space-y-3">
           {[
@@ -470,7 +481,7 @@ export function Results({
       </div>
 
       {/* ——— Micronutrients ——— */}
-      <div className="mt-6 rounded-lg border border-border bg-card p-6">
+      <div className="print-block mt-6 rounded-lg border border-border bg-card p-6">
         <div className="flex items-baseline justify-between">
           <h2 className="font-heading text-xl font-bold">Worth tracking too</h2>
           <p className="eyebrow text-muted-foreground">daily targets</p>
@@ -499,7 +510,7 @@ export function Results({
       </div>
 
       {/* ——— What now ——— */}
-      <div className="mt-6 rounded-lg border border-primary/40 bg-primary/5 p-6">
+      <div className="print-block mt-6 rounded-lg border border-primary/40 bg-primary/5 p-6">
         <h2 className="font-heading text-xl font-bold">Now the honest part</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Every formula is an estimate — yours might run 5–10% hot or cold. Eat at this target for
