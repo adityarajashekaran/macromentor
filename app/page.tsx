@@ -6,6 +6,7 @@ import {
   calculateCalorieTarget,
   calculateMacros,
 } from "@/lib/calculator"
+import { SamplePlan } from "@/components/sample-plan"
 
 /* Honest sample: computed by the real engine at build time, not made up. */
 const SAMPLE = (() => {
@@ -66,41 +67,7 @@ function HeroArt() {
   )
 }
 
-function MacroRow({
-  name,
-  grams,
-  pct,
-  colorVar,
-}: {
-  name: string
-  grams: number
-  pct: number
-  colorVar: string
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <span className="flex items-center gap-2 text-sm">
-        <span
-          className="inline-block h-2.5 w-2.5 rounded-[2px]"
-          style={{ background: `var(${colorVar})` }}
-        />
-        {name}
-      </span>
-      <span className="font-mono text-sm tnum">
-        {grams}g <span className="text-muted-foreground">· {pct}%</span>
-      </span>
-    </div>
-  )
-}
-
 export default function Home() {
-  const { profile, bmr, tdee, calorieTarget, deficitSurplus, macros } = SAMPLE
-  const segments = [
-    { key: "protein", pct: macros.protein.percentage, colorVar: "--color-protein" },
-    { key: "carbs", pct: macros.carbs.percentage, colorVar: "--color-carbs" },
-    { key: "fat", pct: macros.fat.percentage, colorVar: "--color-fat" },
-  ]
-
   return (
     <main>
       {/* ————— Hero ————— */}
@@ -133,37 +100,8 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Sample plan — real output */}
-          <div className="grain relative rounded-lg border border-border bg-card p-6">
-            <div className="flex items-center justify-between">
-              <p className="eyebrow text-primary">Sample plan</p>
-              <p className="eyebrow text-muted-foreground">computed live</p>
-            </div>
-            <p className="mt-6 font-heading text-6xl font-extrabold tracking-tight tnum">
-              {calorieTarget.toLocaleString()}
-            </p>
-            <p className="eyebrow mt-1 text-muted-foreground">
-              kcal / day · {Math.abs(deficitSurplus)} below maintenance
-            </p>
-
-            <div className="mt-6 flex h-2.5 w-full overflow-hidden rounded-full">
-              {segments.map((s) => (
-                <div key={s.key} style={{ width: `${s.pct}%`, background: `var(${s.colorVar})` }} />
-              ))}
-            </div>
-
-            <div className="mt-5 space-y-2.5">
-              <MacroRow name="Protein" grams={macros.protein.grams} pct={macros.protein.percentage} colorVar="--color-protein" />
-              <MacroRow name="Carbs" grams={macros.carbs.grams} pct={macros.carbs.percentage} colorVar="--color-carbs" />
-              <MacroRow name="Fat" grams={macros.fat.grams} pct={macros.fat.percentage} colorVar="--color-fat" />
-            </div>
-
-            <p className="mt-6 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
-              {profile.age}-year-old male, {profile.height} cm, {profile.weight} kg, moderately
-              active, moderate fat loss. BMR {bmr.toLocaleString()} → TDEE {tdee.toLocaleString()}{" "}
-              kcal. These numbers come from the same engine you&apos;re about to use.
-            </p>
-          </div>
+          {/* Sample plan — real output, in the visitor's units */}
+          <SamplePlan sample={SAMPLE} />
         </div>
       </section>
 

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Funnel_Display, Onest, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { UnitsProvider } from "@/components/units-provider"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { Toaster } from "@/components/ui/sonner"
@@ -65,11 +66,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${funnel.variable} ${onest.variable} ${jetbrainsMono.variable} font-body`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="flex min-h-screen flex-col">
-            <SiteHeader />
-            <div className="flex-1">{children}</div>
-            <SiteFooter />
-          </div>
+          <UnitsProvider>
+            <div className="flex min-h-screen flex-col">
+              <SiteHeader />
+              <div className="flex-1">{children}</div>
+              <SiteFooter />
+            </div>
+          </UnitsProvider>
         </ThemeProvider>
         <Toaster />
       </body>

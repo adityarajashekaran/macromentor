@@ -4,6 +4,12 @@ import {
   calculateCalorieTarget,
   calculateMacros,
 } from "@/lib/calculator"
+import {
+  formatEnergy,
+  formatWeight,
+  formatHeight,
+  type UnitPrefs,
+} from "@/lib/units"
 import type { CalculatorFormValues } from "./schema"
 
 export interface CalculationResults {
@@ -161,18 +167,21 @@ export function buildResults(data: CalculatorFormValues): CalculationResults {
   }
 }
 
-/** Plain-text summary for the copy-to-clipboard action. */
-export function formatSummary(r: CalculationResults): string {
-  const sign = r.deficitSurplus > 0 ? "+" : ""
+/** Plain-text summary for the copy-to-clipboard action, in the user's units. */
+export function formatSummary(r: CalculationResults, units: UnitPrefs): string {
+  const { energy, weight, height } = units
+  const sign = r.deficitSurplus > 0 ? "+" : "-"
+  const deficitAbs = formatEnergy(Math.abs(r.deficitSurplus), energy)
   return [
     `MacroMentor plan — ${r.goalDescription}`,
     ``,
-    `Daily target: ${r.calorieTarget.toLocaleString()} kcal (${sign}${r.deficitSurplus.toLocaleString()} vs maintenance)`,
+    `Daily target: ${formatEnergy(r.calorieTarget, energy)} (${sign}${deficitAbs} vs maintenance)`,
     `Protein: ${r.macros.protein.grams} g · Carbs: ${r.macros.carbs.grams} g · Fat: ${r.macros.fat.grams} g`,
     ``,
-    `BMR ${r.bmr.toLocaleString()} kcal (${r.bmrMethod})`,
-    `TDEE ${r.tdee.toLocaleString()} kcal (activity ×${r.palMultiplier})`,
-    `BMI ${r.metrics.bmi}${r.metrics.lbm ? ` · Lean mass ${r.metrics.lbm} kg` : ""}`,
+    `BMR ${formatEnergy(r.bmr, energy)} (${r.bmrMethod})`,
+    `TDEE ${formatEnergy(r.tdee, energy)} (activity ×${r.palMultiplier})`,
+    `BMI ${r.metrics.bmi}${r.metrics.lbm ? ` · Lean mass ${formatWeight(r.metrics.lbm, weight)}` : ""}`,
+    `Profile: ${r.userProfile.age}y · ${r.userProfile.sex} · ${formatHeight(r.userProfile.height, height)} · ${formatWeight(r.userProfile.weight, weight)}`,
     ``,
     `macromentor.horizonfall.com`,
   ].join("\n")

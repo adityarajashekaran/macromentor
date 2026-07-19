@@ -41,6 +41,9 @@ import {
 } from "./schema"
 import { buildResults, type CalculationResults } from "./compute"
 import { Results } from "./results"
+import { WeightField, HeightField, LengthField, UnitsBar } from "./unit-inputs"
+import { useUnits } from "@/components/units-provider"
+import { rangeHint } from "@/lib/units"
 
 /* Session-only persistence: survives refresh, gone when the tab closes —
    which keeps the "close the tab and it's gone" promise intact. */
@@ -149,6 +152,7 @@ export function CalculatorFlow() {
   const [results, setResults] = useState<CalculationResults | null>(null)
   const [restored, setRestored] = useState(false)
   const prefersReducedMotion = useReducedMotion()
+  const { units } = useUnits()
   const totalSteps = 3
 
   const form = useForm<CalculatorFormValues>({
@@ -258,6 +262,8 @@ export function CalculatorFlow() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      <UnitsBar />
+
       {/* Step header */}
       <div className="mb-2 flex items-baseline justify-between">
         <p className="eyebrow text-primary">
@@ -327,12 +333,12 @@ export function CalculatorFlow() {
                       )}
                     />
 
-                    <div className="grid gap-6 sm:grid-cols-3">
+                    <div className="space-y-6">
                       <FormField
                         control={form.control}
                         name="age"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="sm:max-w-[10rem]">
                             <FormLabel>Age</FormLabel>
                             <FormControl>
                               <UnitInput field={field} unit="yrs" placeholder="29" />
@@ -341,32 +347,36 @@ export function CalculatorFlow() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={form.control}
-                        name="height"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Height</FormLabel>
-                            <FormControl>
-                              <UnitInput field={field} unit="cm" placeholder="178" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="weight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Weight</FormLabel>
-                            <FormControl>
-                              <UnitInput field={field} unit="kg" placeholder="82" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid gap-6 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="height"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Height</FormLabel>
+                              <FormControl>
+                                <HeightField key={units.height} field={field} unit={units.height} />
+                              </FormControl>
+                              <FieldHint>{rangeHint("height", units.height)}</FieldHint>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="weight"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Weight</FormLabel>
+                              <FormControl>
+                                <WeightField key={units.weight} field={field} unit={units.weight} />
+                              </FormControl>
+                              <FieldHint>{rangeHint("weight", units.weight)}</FieldHint>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
                   </>
                 )}
@@ -588,11 +598,12 @@ export function CalculatorFlow() {
                                   </span>
                                 </FormLabel>
                                 <FormControl>
-                                  <UnitInput field={field} unit="cm" placeholder="e.g. 90" />
+                                  <LengthField key={units.waist} field={field} unit={units.waist} />
                                 </FormControl>
                                 <FieldHint>
-                                  Measured at the navel. Only used for a heart-health check that can
-                                  raise your omega-3 guidance.
+                                  Measured at the navel, in {units.waist === "in" ? "inches" : "cm"}.
+                                  Only used for a heart-health check that can raise your omega-3
+                                  guidance.
                                 </FieldHint>
                                 <FormMessage />
                               </FormItem>

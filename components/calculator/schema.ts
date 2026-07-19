@@ -12,8 +12,15 @@ export const formSchema = z.object({
   // Step 1 — About you
   sex: z.enum(["male", "female", "other"], { message: "Pick one to continue" }),
   age: z.coerce.number().min(15, "Must be 15 or older").max(100, "Must be 100 or younger"),
-  height: z.coerce.number().min(120, "Between 120 and 250 cm").max(250, "Between 120 and 250 cm"),
-  weight: z.coerce.number().min(30, "Between 30 and 300 kg").max(300, "Between 30 and 300 kg"),
+  // messages are unit-neutral; the exact range is shown per-unit as a field hint
+  height: z.coerce
+    .number({ message: "Enter your height" })
+    .min(120, "Enter a realistic height")
+    .max(250, "Enter a realistic height"),
+  weight: z.coerce
+    .number({ message: "Enter your weight" })
+    .min(30, "Enter a realistic weight")
+    .max(300, "Enter a realistic weight"),
 
   // Step 2 — Lifestyle
   activityLevel: z.enum(["sedentary", "light", "moderate", "very", "extra"], {
@@ -49,7 +56,7 @@ export const formSchema = z.object({
     .default("default"),
   waistCircumference: z.preprocess(
     (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
-    z.number().min(50, "Between 50 and 200 cm").max(200, "Between 50 and 200 cm").optional(),
+    z.number().min(50, "Enter a realistic waist").max(200, "Enter a realistic waist").optional(),
   ),
 })
 

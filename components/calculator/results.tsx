@@ -6,6 +6,16 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { formatSummary, type CalculationResults } from "./compute"
+import { useUnits } from "@/components/units-provider"
+import {
+  formatEnergy,
+  energyValue,
+  formatWeight,
+  formatHeight,
+  perKgToPerLb,
+  type EnergyUnit,
+  type WeightUnit,
+} from "@/lib/units"
 
 const MACRO_META = [
   {
@@ -44,10 +54,13 @@ function Stat({ label, value, unit }: { label: string; value: string; unit?: str
  * The energy map: one axis showing the no-go zone below BMR, BMR itself,
  * the target, and TDEE — so the deficit is a *place*, not three numbers.
  */
-function EnergyScale({ r }: { r: CalculationResults }) {
+function EnergyScale({ r, energy }: { r: CalculationResults; energy: EnergyUnit }) {
   const floor = r.userProfile.sex === "female" ? 1200 : 1500
   const isDeficit = r.deficitSurplus < 0
   const isSurplus = r.deficitSurplus > 0
+  // positions stay in kcal (proportional); only the displayed labels convert
+  const e = (kcal: number) => energyValue(kcal, energy).toLocaleString("en-US")
+  const eu = (kcal: number) => formatEnergy(kcal, energy)
 
   const lo = Math.min(r.bmr, r.calorieTarget, r.tdee)
   const hi = Math.max(r.tdee, r.calorieTarget)
@@ -116,9 +129,7 @@ function EnergyScale({ r }: { r: CalculationResults }) {
                 }`}
               >
                 {m.label}{" "}
-                <span className={m.label === "TARGET" ? "" : "text-foreground/80"}>
-                  {m.x.toLocaleString()}
-                </span>
+                <span className={m.label === "TARGET" ? "" : "text-foreground/80"}>{e(m.x)}</span>
               </p>
             </div>
           )
@@ -130,12 +141,12 @@ function EnergyScale({ r }: { r: CalculationResults }) {
         <div className="flex gap-3">
           <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full bg-[var(--color-kcal)] ring-4 ring-[var(--color-kcal)]/25" />
           <p className="text-sm leading-relaxed">
-            <strong className="font-mono tnum">{r.calorieTarget.toLocaleString()} kcal — your target.</strong>{" "}
+            <strong className="font-mono tnum">{eu(r.calorieTarget)} — your target.</strong>{" "}
             <span className="text-muted-foreground">
               {isDeficit &&
-                `The ${Math.abs(r.deficitSurplus).toLocaleString()}-kcal gap to maintenance is your deficit — sized to move fat while keeping muscle and hormones on side.`}
+                `The ${e(Math.abs(r.deficitSurplus))}-${energy} gap to maintenance is your deficit — sized to move fat while keeping muscle and hormones on side.`}
               {isSurplus &&
-                `Sits ${r.deficitSurplus.toLocaleString()} kcal above maintenance — growth costs energy, and that's the bill.`}
+                `Sits ${eu(r.deficitSurplus)} above maintenance — growth costs energy, and that's the bill.`}
               {!isDeficit && !isSurplus && "Matched to your maintenance — energy in equals energy out."}
             </span>
           </p>
@@ -144,7 +155,7 @@ function EnergyScale({ r }: { r: CalculationResults }) {
           <div className="flex gap-3">
             <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-foreground/60" />
             <p className="text-sm leading-relaxed">
-              <strong className="font-mono tnum">{r.tdee.toLocaleString()} kcal — maintenance (TDEE).</strong>{" "}
+              <strong className="font-mono tnum">{eu(r.tdee)} — maintenance (TDEE).</strong>{" "}
               <span className="text-muted-foreground">
                 What a typical day actually burns. Eat here and the scale holds still.
               </span>
@@ -154,12 +165,12 @@ function EnergyScale({ r }: { r: CalculationResults }) {
         <div className="flex gap-3">
           <span className="mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-[hsl(var(--pop-orange))]" />
           <p className="text-sm leading-relaxed">
-            <strong className="font-mono tnum">{r.bmr.toLocaleString()} kcal — resting burn (BMR).</strong>{" "}
+            <strong className="font-mono tnum">{eu(r.bmr)} — resting burn (BMR).</strong>{" "}
             <span className="text-muted-foreground">
               What your organs spend if you never left bed. Everything striped below it is no-go:
               eat under your resting burn for long and the body starts paying with muscle, downshifts
               your metabolism, and lets hormones slide — which is why crash diets rebound.
-              {isDeficit && ` Your hard floor is ${floor.toLocaleString()} kcal, and the deficit is capped well before the stripes.`}
+              {isDeficit && ` Your hard floor is ${eu(floor)}, and the deficit is capped well before the stripes.`}
             </span>
           </p>
         </div>
@@ -186,6 +197,61 @@ function WarningPill({
   )
 }
 
+/** Live weight + energy switch — the two units that show up on this page. */
+function UnitSwitch({
+  weightUnit,
+  energy,
+  setUnits,
+}: {
+  weightUnit: WeightUnit
+  energy: EnergyUnit
+  setUnits: (patch: { weight?: WeightUnit; energy?: EnergyUnit }) => void
+}) {
+  const seg = <T extends string>(
+    current: T,
+    opts: { v: T; l: string }[],
+    onPick: (v: T) => void,
+  ) => (
+    <div className="flex rounded-md border border-border p-0.5">
+      {opts.map((o) => (
+        <button
+          key={o.v}
+          type="button"
+          onClick={() => onPick(o.v)}
+          className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${
+            current === o.v
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {o.l}
+        </button>
+      ))}
+    </div>
+  )
+  return (
+    <div className="flex items-center gap-3">
+      {seg(
+        weightUnit,
+        [
+          { v: "kg" as WeightUnit, l: "kg" },
+          { v: "lb" as WeightUnit, l: "lb" },
+          { v: "st-lb" as WeightUnit, l: "st" },
+        ],
+        (v) => setUnits({ weight: v }),
+      )}
+      {seg(
+        energy,
+        [
+          { v: "kcal" as EnergyUnit, l: "kcal" },
+          { v: "kJ" as EnergyUnit, l: "kJ" },
+        ],
+        (v) => setUnits({ energy: v }),
+      )}
+    </div>
+  )
+}
+
 export function Results({
   results: r,
   onEdit,
@@ -196,12 +262,16 @@ export function Results({
   onReset: () => void
 }) {
   const prefersReducedMotion = useReducedMotion()
+  const { units, setUnits } = useUnits()
+  const energy = units.energy
+  const weightUnit = units.weight
   const sign = r.deficitSurplus > 0 ? "+" : "−"
   const hasAdjustment = r.deficitSurplus !== 0
+  const eu = (kcal: number) => formatEnergy(kcal, energy)
 
   async function copySummary() {
     try {
-      await navigator.clipboard.writeText(formatSummary(r))
+      await navigator.clipboard.writeText(formatSummary(r, units))
       toast("Plan copied — paste it anywhere.")
     } catch {
       toast("Couldn't access the clipboard.")
@@ -215,26 +285,31 @@ export function Results({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="mx-auto max-w-3xl"
     >
+      {/* ——— Unit switch ——— */}
+      <div className="no-print mb-6 flex justify-center">
+        <UnitSwitch weightUnit={weightUnit} energy={energy} setUnits={setUnits} />
+      </div>
+
       {/* ——— Hero number ——— */}
       <div className="text-center">
         <p className="eyebrow text-primary">
           Your plan · {r.goalDescription} · Tier 0{r.tier}
         </p>
         <p className="mt-4 font-heading text-7xl font-extrabold tracking-tight tnum sm:text-8xl">
-          {r.calorieTarget.toLocaleString()}
+          {energyValue(r.calorieTarget, energy).toLocaleString("en-US")}
         </p>
-        <p className="eyebrow mt-2 text-muted-foreground">kcal per day</p>
+        <p className="eyebrow mt-2 text-muted-foreground">{energy} per day</p>
         {hasAdjustment ? (
           <p className="mt-4 text-sm text-muted-foreground">
             <span className="mr-1.5 inline-block rounded-full bg-[var(--color-kcal)]/15 px-3 py-1 font-mono font-medium text-[var(--color-kcal)] tnum">
               {sign}
-              {Math.abs(r.deficitSurplus).toLocaleString()} kcal
+              {energyValue(Math.abs(r.deficitSurplus), energy).toLocaleString("en-US")} {energy}
             </span>
-            versus the {r.tdee.toLocaleString()} kcal you burn in a typical day.
+            versus the {eu(r.tdee)} you burn in a typical day.
           </p>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
-            Matched to the {r.tdee.toLocaleString()} kcal you burn in a typical day.
+            Matched to the {eu(r.tdee)} you burn in a typical day.
           </p>
         )}
       </div>
@@ -247,15 +322,14 @@ export function Results({
           {r.warnings.belowMinimum && (
             <WarningPill tone="destructive">
               <strong>This target sits below the safe floor</strong> (
-              {r.userProfile.sex === "female" ? "1,200" : "1,500"} kcal). Pick a gentler rate, or
-              work with a professional — very low intakes need supervision.
+              {eu(r.userProfile.sex === "female" ? 1200 : 1500)}). Pick a gentler rate, or work with
+              a professional — very low intakes need supervision.
             </WarningPill>
           )}
           {r.warnings.refeedRecommended && (
             <WarningPill tone="gold">
               <strong>Big deficit — plan refeeds.</strong> Every 1–2 weeks, spend a day eating at
-              maintenance ({r.tdee.toLocaleString()} kcal, extra from carbs). It helps hormones,
-              training, and sanity.
+              maintenance ({eu(r.tdee)}, extra from carbs). It helps hormones, training, and sanity.
             </WarningPill>
           )}
           {r.warnings.ethnicityAdjustmentApplied && (
@@ -269,7 +343,7 @@ export function Results({
       )}
 
       {/* ——— Energy map ——— */}
-      <EnergyScale r={r} />
+      <EnergyScale r={r} energy={energy} />
 
       {/* ——— Macros ——— */}
       <div className="mt-6 rounded-lg border border-border bg-card p-6">
@@ -314,7 +388,7 @@ export function Results({
                   <span className="ml-0.5 text-base font-normal text-muted-foreground">g</span>
                 </p>
                 <p className="eyebrow mt-1 text-muted-foreground">
-                  {macro.percentage}% · {macro.calories.toLocaleString()} kcal
+                  {macro.percentage}% · {eu(macro.calories)}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">{m.note}</p>
               </div>
@@ -325,9 +399,13 @@ export function Results({
         <p className="mt-4 text-xs text-muted-foreground">
           Protein comes to{" "}
           <span className="font-mono tnum">
-            {(r.macros.protein.grams / r.userProfile.weight).toFixed(1)} g
+            {(() => {
+              const perKg = r.macros.protein.grams / r.userProfile.weight
+              return weightUnit === "kg" ? perKg.toFixed(1) : perKgToPerLb(perKg).toFixed(1)
+            })()}{" "}
+            g
           </span>{" "}
-          per kg of body weight
+          per {weightUnit === "kg" ? "kg" : "lb"} of body weight
           {r.userProfile.dietType !== "standard" && (
             <> — bumped for a {r.userProfile.dietType} diet</>
           )}
@@ -339,9 +417,9 @@ export function Results({
       <div className="mt-6 grid grid-cols-2 gap-2.5">
         <Stat label="BMI" value={r.metrics.bmi.toFixed(1)} />
         {r.metrics.lbm !== undefined ? (
-          <Stat label="Lean mass" value={r.metrics.lbm.toFixed(1)} unit="kg" />
+          <Stat label="Lean mass" value={formatWeight(r.metrics.lbm, weightUnit)} />
         ) : (
-          <Stat label="Weight" value={r.userProfile.weight.toLocaleString()} unit="kg" />
+          <Stat label="Weight" value={formatWeight(r.userProfile.weight, weightUnit)} />
         )}
       </div>
 
@@ -352,7 +430,7 @@ export function Results({
           {[
             [
               "01",
-              `Resting burn (BMR): ${r.bmr.toLocaleString()} kcal`,
+              `Resting burn (BMR): ${eu(r.bmr)}`,
               r.bmrMethod +
                 (r.tier < 3
                   ? " — your body-fat % let us use a formula that counts muscle."
@@ -361,11 +439,11 @@ export function Results({
             [
               "02",
               `Daily burn (TDEE): ×${r.palMultiplier}`,
-              `Your activity level multiplies resting burn up to ${r.tdee.toLocaleString()} kcal a day.`,
+              `Your activity level multiplies resting burn up to ${eu(r.tdee)} a day.`,
             ],
             [
               "03",
-              `Goal adjustment: ${hasAdjustment ? `${sign}${Math.abs(r.deficitSurplus).toLocaleString()} kcal` : "none"}`,
+              `Goal adjustment: ${hasAdjustment ? `${sign}${eu(Math.abs(r.deficitSurplus))}` : "none"}`,
               `${r.goalDescription} sets the size of the change — capped so your target stays out of the striped zone on the map above.`,
             ],
             [
@@ -384,8 +462,9 @@ export function Results({
           ))}
         </ol>
         <p className="mt-5 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
-          Profile: {r.userProfile.age}y · {r.userProfile.sex} · {r.userProfile.height} cm ·{" "}
-          {r.userProfile.weight} kg
+          Profile: {r.userProfile.age}y · {r.userProfile.sex} ·{" "}
+          {formatHeight(r.userProfile.height, units.height)} ·{" "}
+          {formatWeight(r.userProfile.weight, weightUnit)}
           {r.userProfile.bodyFat !== undefined && <> · {r.userProfile.bodyFat}% body fat</>}
         </p>
       </div>
@@ -425,8 +504,8 @@ export function Results({
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Every formula is an estimate — yours might run 5–10% hot or cold. Eat at this target for
           two to three weeks, weigh yourself a few mornings a week, and watch the trend. Moving the
-          wrong way? Adjust by ~150 kcal and give it another two weeks. That feedback loop beats any
-          calculator, including this one.
+          wrong way? Adjust by ~{eu(150)} and give it another two weeks. That feedback loop beats
+          any calculator, including this one.
         </p>
       </div>
 
