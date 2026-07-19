@@ -578,6 +578,12 @@ export function CalculatorFlow() {
               </Button>
             )}
           </div>
+
+          {step === totalSteps && (
+            <p className="mt-4 text-right text-xs leading-relaxed text-muted-foreground">
+              By calculating you acknowledge this is informational guidance, not medical advice.
+            </p>
+          )}
         </form>
       </Form>
     </div>
