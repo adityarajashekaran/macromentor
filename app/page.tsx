@@ -98,6 +98,9 @@ export default function Home() {
                 3 steps · ~2 min · nothing stored
               </p>
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Not medical advice. Check with a dietitian before making big changes to your diet.
+            </p>
           </div>
 
           {/* Sample plan — real output, in the visitor's units */}
@@ -286,6 +289,9 @@ export default function Home() {
             Start the calculator
             <ArrowRight className="h-4 w-4" />
           </Link>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Not medical advice. Check with a dietitian before making big changes to your diet.
+          </p>
         </div>
       </section>
     </main>
