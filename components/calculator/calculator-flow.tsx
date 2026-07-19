@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, type Resolver } from "react-hook-form"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
@@ -42,6 +42,10 @@ import {
 import { buildResults, type CalculationResults } from "./compute"
 import { Results } from "./results"
 
+/* Session-only persistence: survives refresh, gone when the tab closes —
+   which keeps the "close the tab and it's gone" promise intact. */
+const STORAGE_KEY = "macromentor-calc"
+
 const STEPS = [
   {
     title: "About you",
@@ -79,6 +83,7 @@ function UnitInput({
         inputMode="decimal"
         placeholder={placeholder}
         autoFocus={autoFocus}
+        autoComplete="off"
         className="h-12 pr-12 font-mono tnum"
       />
       <span className="eyebrow pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -142,6 +147,7 @@ function FieldHint({ children }: { children: React.ReactNode }) {
 export function CalculatorFlow() {
   const [step, setStep] = useState(1)
   const [results, setResults] = useState<CalculationResults | null>(null)
+  const [restored, setRestored] = useState(false)
   const prefersReducedMotion = useReducedMotion()
   const totalSteps = 3
 
@@ -158,6 +164,49 @@ export function CalculatorFlow() {
   })
 
   const watchGoal = form.watch("goal")
+
+  // Restore once on mount (after hydration, so server HTML always matches)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY)
+      if (raw) {
+        const saved = JSON.parse(raw)
+        // keepDefaultValues: otherwise the restored values become the new
+        // defaults, and a later "Start over" reset() restores them instead
+        // of clearing the form
+        if (saved?.values) form.reset(saved.values, { keepDefaultValues: true })
+        if (typeof saved?.step === "number" && saved.step >= 1 && saved.step <= 3) {
+          setStep(saved.step)
+        }
+        if (saved?.hasResults) {
+          const parsed = formSchema.safeParse(saved.values)
+          if (parsed.success) setResults(buildResults(parsed.data))
+        }
+      }
+    } catch {
+      // corrupt session data — start fresh
+    }
+    setRestored(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Persist on every change once restored
+  useEffect(() => {
+    if (!restored) return
+    const save = () => {
+      try {
+        sessionStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ values: form.getValues(), step, hasResults: results !== null }),
+        )
+      } catch {
+        // storage full/unavailable — the calculator still works, just won't survive refresh
+      }
+    }
+    save()
+    const sub = form.watch(() => save())
+    return () => sub.unsubscribe()
+  }, [restored, step, results, form])
 
   async function nextStep() {
     const valid = await form.trigger(stepFields[step])
@@ -183,12 +232,20 @@ export function CalculatorFlow() {
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
+  // One-frame gate so a restored session doesn't flash step 1 before jumping
+  if (!restored) {
+    return <div className="mx-auto min-h-[50vh] max-w-2xl" aria-hidden />
+  }
+
   if (results) {
     return (
       <Results
         results={results}
         onEdit={() => setResults(null)}
         onReset={() => {
+          try {
+            sessionStorage.removeItem(STORAGE_KEY)
+          } catch {}
           form.reset()
           setResults(null)
           setStep(1)
@@ -223,7 +280,10 @@ export function CalculatorFlow() {
         {/* No native submit button anywhere: a Continue click's default action can land on
             the re-rendered final button and phantom-submit the whole form. Enter still works
             via the form's submit event, routed through the step logic. */}
+        {/* autoComplete off also opts out of the browser's form-restore-on-reload,
+            which would repaint stale values into inputs our state has cleared */}
         <form
+          autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault()
             if (step < totalSteps) void nextStep()
