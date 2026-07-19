@@ -99,22 +99,30 @@ function EnergyScale({ r }: { r: CalculationResults }) {
             ? [{ x: r.tdee, label: "TDEE", cls: "border-2 border-foreground/60 bg-background", size: "h-4 w-4" }]
             : []),
           { x: r.calorieTarget, label: "TARGET", cls: "bg-[var(--color-kcal)] ring-4 ring-[var(--color-kcal)]/25", size: "h-5 w-5" },
-        ].map((m) => (
-          <div
-            key={m.label}
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${pos(m.x)}%` }}
-          >
-            <div className={`rounded-full ${m.size} ${m.cls}`} />
-            <p
-              className={`eyebrow absolute left-1/2 -translate-x-1/2 whitespace-nowrap ${
-                m.label === "TARGET" ? "-top-7 text-[var(--color-kcal)]" : "top-5 text-muted-foreground"
-              }`}
+        ].map((m) => {
+          const p = pos(m.x)
+          // keep labels (now carrying numbers) inside the track's edges
+          const labelShift = p > 85 ? "-translate-x-[85%]" : p < 15 ? "-translate-x-[15%]" : "-translate-x-1/2"
+          return (
+            <div
+              key={m.label}
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ left: `${p}%` }}
             >
-              {m.label}
-            </p>
-          </div>
-        ))}
+              <div className={`rounded-full ${m.size} ${m.cls}`} />
+              <p
+                className={`eyebrow absolute left-1/2 whitespace-nowrap ${labelShift} ${
+                  m.label === "TARGET" ? "-top-7 text-[var(--color-kcal)]" : "top-5 text-muted-foreground"
+                }`}
+              >
+                {m.label}{" "}
+                <span className={m.label === "TARGET" ? "" : "text-foreground/80"}>
+                  {m.x.toLocaleString()}
+                </span>
+              </p>
+            </div>
+          )
+        })}
       </div>
 
       {/* Legend rows */}
