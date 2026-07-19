@@ -50,24 +50,26 @@
     --secondary: 240 14% 10%;
     --secondary-foreground: 40 23% 87%;
     --muted: 240 14% 10%;
-    --muted-foreground: 235 6% 54%; /* #848591 */
+    --muted-foreground: 235 8% 63%; /* #9a9ba8 — legible small print on dark */
     --accent: 237 13% 14%;
     --accent-foreground: 40 23% 87%;
     --destructive: 358 100% 69%; /* #ff6367 */
     --destructive-foreground: 230 23% 5%;
-    --border: 235 13% 18%; /* #272833 */
-    --input: 235 13% 18%;
+    --border: 235 13% 25%; /* #383a48 — hairlines must survive dark */
+    --input: 235 13% 25%;
     --ring: 183 43% 54%;
 
     --pop-orange: 23 78% 57%; /* #e77f3e */
     --pop-gold: 38 75% 67%; /* #eabc6e */
     --pop-navy: 221 27% 79%; /* #bbc4d8 — pale steel on dark */
 
-    /* data colors get extra chroma in dark mode so they actually pop */
-    --color-protein: #8fb3f2;
-    --color-carbs: #f2c05e;
-    --color-fat: #f5854a;
-    --color-kcal: #5fd6db;
+    /* data colors: dark-mode steps of the brand hues, validated for
+       lightness band, chroma, CVD + normal-vision separation, and 3:1
+       contrast against the dark card surface */
+    --color-protein: #6091e6;
+    --color-carbs: #bd8b2b;
+    --color-fat: #c2431f;
+    --color-kcal: #3fc9d0;
   }
 }
 

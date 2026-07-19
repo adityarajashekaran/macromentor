@@ -363,7 +363,7 @@ export function Results({
           <p className="eyebrow text-muted-foreground">grams per day</p>
         </div>
 
-        <div className="mt-5 flex h-2.5 w-full overflow-hidden rounded-full">
+        <div className="mt-5 flex h-4 w-full gap-0.5 overflow-hidden rounded-full">
           {MACRO_META.map((m) => (
             <div
               key={m.key}
@@ -381,8 +381,11 @@ export function Results({
             return (
               <div
                 key={m.key}
-                className="rounded-md border border-border p-4"
-                style={{ borderTop: `3px solid var(${m.colorVar})` }}
+                className="rounded-md border p-4"
+                style={{
+                  borderColor: `color-mix(in srgb, var(${m.colorVar}) 40%, transparent)`,
+                  borderTop: `3px solid var(${m.colorVar})`,
+                }}
               >
                 <p className="flex items-center gap-2 text-sm font-medium">
                   <span

@@ -64,7 +64,7 @@ export function SamplePlan({ sample }: { sample: SampleData }) {
         {e} / day · {formatEnergy(Math.abs(deficitSurplus), e)} below maintenance
       </p>
 
-      <div className="mt-6 flex h-2.5 w-full overflow-hidden rounded-full">
+      <div className="mt-6 flex h-4 w-full gap-0.5 overflow-hidden rounded-full">
         {segments.map((s) => (
           <div key={s.key} style={{ width: `${s.pct}%`, background: `var(${s.colorVar})` }} />
         ))}
