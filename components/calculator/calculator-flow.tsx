@@ -41,7 +41,7 @@ import {
 } from "./schema"
 import { buildResults, type CalculationResults } from "./compute"
 import { Results } from "./results"
-import { WeightField, HeightField, LengthField, UnitsBar } from "./unit-inputs"
+import { WeightField, HeightField, LengthField, UnitToggle } from "./unit-inputs"
 import { useUnits } from "@/components/units-provider"
 import { rangeHint } from "@/lib/units"
 
@@ -262,8 +262,6 @@ export function CalculatorFlow() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <UnitsBar />
-
       {/* Step header */}
       <div className="mb-2 flex items-baseline justify-between">
         <p className="eyebrow text-primary">
@@ -353,7 +351,10 @@ export function CalculatorFlow() {
                           name="height"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Height</FormLabel>
+                              <div className="flex items-center justify-between">
+                                <FormLabel>Height</FormLabel>
+                                <UnitToggle dimension="height" />
+                              </div>
                               <FormControl>
                                 <HeightField key={units.height} field={field} unit={units.height} />
                               </FormControl>
@@ -367,7 +368,10 @@ export function CalculatorFlow() {
                           name="weight"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Weight</FormLabel>
+                              <div className="flex items-center justify-between">
+                                <FormLabel>Weight</FormLabel>
+                                <UnitToggle dimension="weight" />
+                              </div>
                               <FormControl>
                                 <WeightField key={units.weight} field={field} unit={units.weight} />
                               </FormControl>
@@ -591,12 +595,15 @@ export function CalculatorFlow() {
                             name="waistCircumference"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>
-                                  Waist{" "}
-                                  <span className="eyebrow ml-1.5 text-muted-foreground">
-                                    optional
-                                  </span>
-                                </FormLabel>
+                                <div className="flex items-center justify-between">
+                                  <FormLabel>
+                                    Waist{" "}
+                                    <span className="eyebrow ml-1.5 text-muted-foreground">
+                                      optional
+                                    </span>
+                                  </FormLabel>
+                                  <UnitToggle dimension="waist" />
+                                </div>
                                 <FormControl>
                                   <LengthField key={units.waist} field={field} unit={units.waist} />
                                 </FormControl>

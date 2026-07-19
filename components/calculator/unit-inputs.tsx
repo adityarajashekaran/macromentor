@@ -206,59 +206,53 @@ export function LengthField({ field, unit }: { field: any; unit: LengthUnit }) {
   )
 }
 
-/** Compact per-dimension unit selector bar for the top of the calculator. */
-export function UnitsBar() {
+const UNIT_OPTIONS = {
+  weight: [
+    { v: "kg", l: "kg" },
+    { v: "lb", l: "lb" },
+    { v: "st-lb", l: "st" },
+  ],
+  height: [
+    { v: "cm", l: "cm" },
+    { v: "ft-in", l: "ft/in" },
+  ],
+  waist: [
+    { v: "cm", l: "cm" },
+    { v: "in", l: "in" },
+  ],
+} as const
+
+/**
+ * Tiny segmented unit switch that sits on a field's label row, so each unit
+ * choice lives next to the input it changes instead of in a global bar.
+ */
+export function UnitToggle({ dimension }: { dimension: keyof typeof UNIT_OPTIONS }) {
   const { units, setUnits } = useUnits()
-
-  const group = (
-    label: string,
-    key: "weight" | "height" | "waist" | "energy",
-    opts: { v: string; l: string }[],
-  ) => (
-    <div className="flex items-center gap-2">
-      <span className="eyebrow text-muted-foreground">{label}</span>
-      <div className="flex rounded-md border border-border p-0.5">
-        {opts.map((o) => {
-          const active = units[key] === o.v
-          return (
-            <button
-              key={o.v}
-              type="button"
-              onClick={() => setUnits({ [key]: o.v } as any)}
-              className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {o.l}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-
   return (
-    <div className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-md border border-border bg-card px-4 py-3">
-      <span className="eyebrow shrink-0 text-primary">Units</span>
-      {group("Weight", "weight", [
-        { v: "kg", l: "kg" },
-        { v: "lb", l: "lb" },
-        { v: "st-lb", l: "st" },
-      ])}
-      {group("Height", "height", [
-        { v: "cm", l: "cm" },
-        { v: "ft-in", l: "ft/in" },
-      ])}
-      {group("Waist", "waist", [
-        { v: "cm", l: "cm" },
-        { v: "in", l: "in" },
-      ])}
-      {group("Energy", "energy", [
-        { v: "kcal", l: "kcal" },
-        { v: "kJ", l: "kJ" },
-      ])}
+    <div
+      className="flex rounded-full bg-muted p-0.5"
+      role="radiogroup"
+      aria-label={`${dimension} unit`}
+    >
+      {UNIT_OPTIONS[dimension].map((o) => {
+        const active = units[dimension] === o.v
+        return (
+          <button
+            key={o.v}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            onClick={() => setUnits({ [dimension]: o.v } as any)}
+            className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${
+              active
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {o.l}
+          </button>
+        )
+      })}
     </div>
   )
 }
