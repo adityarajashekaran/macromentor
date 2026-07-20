@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowUpRight } from "lucide-react"
 import {
   calculateBMR,
   calculateTDEE,
@@ -7,6 +7,15 @@ import {
   calculateMacros,
 } from "@/lib/calculator"
 import { SamplePlan } from "@/components/sample-plan"
+import { getArticlesBySlugs, getArticleCount } from "@/lib/content/articles"
+
+/* Homepage Learn teaser: a curated few, chosen for their hook. */
+const LEARN_PICKS = getArticlesBySlugs([
+  "which-bmr-formula",
+  "neat-activity-thermogenesis",
+  "does-metabolism-slow-with-age",
+])
+const ARTICLE_COUNT = getArticleCount()
 
 /* Honest sample: computed by the real engine at build time, not made up. */
 const SAMPLE = (() => {
@@ -202,6 +211,51 @@ export default function Home() {
               <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t.body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ————— Learn teaser ————— */}
+      <section className="container py-16 md:py-24">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-center lg:gap-16">
+          <div>
+            <p className="eyebrow text-primary">Learn</p>
+            <h2 className="mt-3 text-3xl font-bold sm:text-4xl">
+              Every number here has a paper behind it.
+            </h2>
+            <p className="mt-4 max-w-[46ch] leading-relaxed text-muted-foreground">
+              Wondering why it picks one formula over another, or why the scale stalls in a
+              deficit that should be working? We wrote it up. {ARTICLE_COUNT} plain-English
+              explainers, every claim linked to the study it came from.
+            </p>
+            <Link
+              href="/learn"
+              className="mt-8 inline-flex items-center gap-2 rounded-md border border-primary/40 px-6 py-3.5 font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+            >
+              Browse the Learn hub
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            {LEARN_PICKS.map((a) => (
+              <Link
+                key={a.slug}
+                href={`/learn/${a.slug}`}
+                className="lift group flex flex-col justify-between rounded-lg border border-border bg-card p-5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="eyebrow text-primary">Read</span>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                </div>
+                <h3 className="mt-4 font-heading text-base font-bold leading-snug">
+                  {a.headline}
+                </h3>
+                <p className="eyebrow mt-4 text-muted-foreground/80">
+                  {a.readingMinutes} min · {a.sourceCount} sources
+                </p>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -16,23 +16,25 @@ export function SiteHeader() {
           macromentor<span className="text-primary">.</span>
         </Link>
 
-        <nav className="flex items-center gap-3">
-          <Link
-            href="/learn"
-            className={`eyebrow transition-colors hover:text-foreground ${
-              pathname.startsWith("/learn") ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            Learn
-          </Link>
+        <nav className="flex items-center gap-2.5">
           <a
             href="https://horizonfall.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="eyebrow hidden text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="eyebrow mr-1 hidden text-muted-foreground transition-colors hover:text-foreground sm:block"
           >
             a horizonfall project
           </a>
+          <Link
+            href="/learn"
+            className={`eyebrow rounded-md border px-4 py-2.5 transition-colors ${
+              pathname.startsWith("/learn")
+                ? "border-primary/40 text-primary"
+                : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+            }`}
+          >
+            Learn
+          </Link>
           {onCalculatorPage ? (
             <button
               type="button"

@@ -82,3 +82,15 @@ export function getFeaturedArticle(): LoadedArticle | undefined {
   const meta = ARTICLES.find((a) => a.featured)
   return meta ? load(meta) : undefined
 }
+
+/** Load specific articles by slug, in the order given (unknown slugs skipped). */
+export function getArticlesBySlugs(slugs: string[]): LoadedArticle[] {
+  return slugs
+    .map((slug) => ARTICLES.find((a) => a.slug === slug))
+    .filter((m): m is ArticleMeta => Boolean(m))
+    .map(load)
+}
+
+export function getArticleCount(): number {
+  return ARTICLES.length
+}
