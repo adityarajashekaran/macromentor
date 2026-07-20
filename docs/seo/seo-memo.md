@@ -68,18 +68,22 @@ FAQ answers and on-page copy, not as page titles to compete on.
       cap at 3–5 pages, 400+ genuinely distinct words each, Q4 earliest
 - [ ] Don't migrate off the subdomain — see placement strategy below
 
-## 3. Content to write, in order
+## 3. Content
 
-1. [ ] Which BMR formula should you use — Mifflin-St Jeor, Katch-McArdle, or
-       Cunningham?
-2. [ ] The 1,200-calorie floor: where it comes from, and when a calculator
-       should refuse to go lower
-3. [ ] Does ethnicity affect your BMR? The research behind the adjustment
-4. [ ] Why a calorie calculator should flag iron, vitamin D, and waist
-       circumference — not just calories
-5. [ ] MacroMentor vs. calculator.net vs. TDEE calculator: how the numbers
-       differ, and why
-6. [ ] Refeed days and diet breaks: a simple, calculator-backed guide
+Drafted + fact-checked, in `docs/seo/content/` (still need: publish to the live site as pages,
+each linking into /calculator; and the piece-06 inline CITATION-NEEDED marker resolved):
+
+1. [x] Which BMR formula should you use — Mifflin-St Jeor, Katch-McArdle, or Cunningham?
+2. [x] The 1,200-calorie floor: where it comes from, and when a calculator should refuse to go lower
+3. [x] Does ethnicity affect your BMR? The research behind the adjustment
+4. [x] Why a calorie calculator should flag iron, vitamin D, and waist circumference, not just calories
+5. [x] MacroMentor vs. calculator.net vs. TDEE calculator: how the numbers differ, and why
+6. [x] Refeed days and diet breaks: a simple, calculator-backed guide
+7. [x] Quick answers FAQ: TEF / protein, BMR vs RMR, how much to trust the number
+
+Queued for the next batch (briefs in `docs/seo/content/_queued-articles.md`, need a fresh
+web-search budget): NEAT (~2,000 kcal/day variance), BMI-lies-by-ancestry, cold-adapted
+metabolism +7%, "does metabolism slow with age" (Pontzer 2021).
 
 ## 4. Distribution / backlinks
 
