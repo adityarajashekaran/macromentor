@@ -45,6 +45,7 @@ import { ResumePlanDialog } from "./resume-plan-dialog"
 import { WeightField, HeightField, LengthField, UnitToggle } from "./unit-inputs"
 import { useUnits } from "@/components/units-provider"
 import { rangeHint } from "@/lib/units"
+import { CALCULATOR_NAV_EVENT } from "@/lib/calculator-nav"
 
 /* Session-only persistence: survives refresh, gone when the tab closes —
    which keeps the "close the tab and it's gone" promise intact. */
@@ -173,6 +174,21 @@ export function CalculatorFlow() {
 
   const watchGoal = form.watch("goal")
 
+  // Reads whatever plan is currently sitting in session storage, if any —
+  // shared by the mount restore and the header's same-page nav event below.
+  function readSavedResults(): CalculationResults | null {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY)
+      if (!raw) return null
+      const saved = JSON.parse(raw)
+      if (!saved?.hasResults) return null
+      const parsed = formSchema.safeParse(saved.values)
+      return parsed.success ? buildResults(parsed.data) : null
+    } catch {
+      return null
+    }
+  }
+
   // Restore once on mount (after hydration, so server HTML always matches)
   useEffect(() => {
     try {
@@ -186,19 +202,33 @@ export function CalculatorFlow() {
         if (typeof saved?.step === "number" && saved.step >= 1 && saved.step <= 3) {
           setStep(saved.step)
         }
-        if (saved?.hasResults) {
-          const parsed = formSchema.safeParse(saved.values)
-          // Don't jump straight to the saved results — ask first, so a
-          // returning visitor isn't dropped past the form with no way back.
-          if (parsed.success) setResumePrompt(buildResults(parsed.data))
-        }
       }
     } catch {
       // corrupt session data — start fresh
     }
+    // Don't jump straight to the saved results — ask first, so a returning
+    // visitor isn't dropped past the form with no way back.
+    const saved = readSavedResults()
+    if (saved) setResumePrompt(saved)
     setRestored(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The header's "Calculator" link becomes a same-page button while already
+  // here (a Link to the current URL is a no-op) — it dispatches this event
+  // instead so clicking it from the results view re-opens the resume choice.
+  useEffect(() => {
+    function handleNavClick() {
+      const saved = results ?? readSavedResults()
+      if (saved) {
+        setResults(null)
+        setResumePrompt(saved)
+      }
+    }
+    window.addEventListener(CALCULATOR_NAV_EVENT, handleNavClick)
+    return () => window.removeEventListener(CALCULATOR_NAV_EVENT, handleNavClick)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results])
 
   // Persist on every change once restored. While the resume prompt is up,
   // `results` is still null — count resumePrompt too, or this write would
