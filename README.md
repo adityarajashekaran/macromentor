@@ -16,13 +16,15 @@ Ancestry input is handled carefully: optional, explained before it's asked, only
 
 Everything runs in the browser. No account, no server receiving inputs, no database, no tracking scripts. Health information belongs to the person it describes, so the site is statically exported and your numbers never leave the tab.
 
+![Results page](docs/screenshot-results.png)
+
 ## How it's built
 
 The calculation core is a pure function in `calculator.ts`, covered by a 43-test Vitest suite. Every tier, every formula branch, and every safety cap has a named test case with expected values recorded.
 
 One method I arrived at the hard way: write the tests for each section first, then build against them. My first attempts let the AI build the calculator directly and it kept silently dropping steps, a tier firing wrong, a cap not triggering, a macro floor skipped. Once the tests existed as a specification, the AI-generated implementation was correct. It's the only reliable way I've found to keep AI honest on a multi-branch calculation engine, and it generalises to any complex AI-built system.
 
-The interface is a three-step flow that takes about two minutes, and the results page shows its working — which formula ran, what multiplied what, where the caps kicked in. The design language is shared with [horizonfall.com](https://horizonfall.com): parchment and near-black themes, mono numerals, film grain, and an accent-coloured full stop.
+The interface is a three-step flow that takes about two minutes, and the results page shows its working — which formula ran, what multiplied what, where the caps kicked in. Progress and results survive a refresh (session storage, not a server), and coming back with a plan already saved prompts you to resume it or start over rather than silently discarding it. Every unit system is supported inline — metric, imperial, stones, kJ — and results print or export to PDF in the same layout as the page. The design language is shared with [horizonfall.com](https://horizonfall.com): parchment and near-black themes, mono numerals, film grain, and an accent-coloured full stop.
 
 Stack: Next.js 16, React 19, TypeScript, Tailwind, Radix UI, Vitest, Playwright.
 
