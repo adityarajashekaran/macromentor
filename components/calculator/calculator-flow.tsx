@@ -41,6 +41,7 @@ import {
 } from "./schema"
 import { buildResults, type CalculationResults } from "./compute"
 import { Results } from "./results"
+import { ResumePlanDialog } from "./resume-plan-dialog"
 import { WeightField, HeightField, LengthField, UnitToggle } from "./unit-inputs"
 import { useUnits } from "@/components/units-provider"
 import { rangeHint } from "@/lib/units"
@@ -151,6 +152,9 @@ export function CalculatorFlow() {
   const [step, setStep] = useState(1)
   const [results, setResults] = useState<CalculationResults | null>(null)
   const [restored, setRestored] = useState(false)
+  // A saved plan from an earlier visit, awaiting "resume or start over" —
+  // held separately from `results` so it isn't shown until the visitor picks.
+  const [resumePrompt, setResumePrompt] = useState<CalculationResults | null>(null)
   const prefersReducedMotion = useReducedMotion()
   const { units } = useUnits()
   const totalSteps = 3
@@ -184,7 +188,9 @@ export function CalculatorFlow() {
         }
         if (saved?.hasResults) {
           const parsed = formSchema.safeParse(saved.values)
-          if (parsed.success) setResults(buildResults(parsed.data))
+          // Don't jump straight to the saved results — ask first, so a
+          // returning visitor isn't dropped past the form with no way back.
+          if (parsed.success) setResumePrompt(buildResults(parsed.data))
         }
       }
     } catch {
@@ -194,14 +200,17 @@ export function CalculatorFlow() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Persist on every change once restored
+  // Persist on every change once restored. While the resume prompt is up,
+  // `results` is still null — count resumePrompt too, or this write would
+  // clear the saved hasResults flag before the visitor gets to choose.
+  const hasResults = results !== null || resumePrompt !== null
   useEffect(() => {
     if (!restored) return
     const save = () => {
       try {
         sessionStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify({ values: form.getValues(), step, hasResults: results !== null }),
+          JSON.stringify({ values: form.getValues(), step, hasResults }),
         )
       } catch {
         // storage full/unavailable — the calculator still works, just won't survive refresh
@@ -210,7 +219,7 @@ export function CalculatorFlow() {
     save()
     const sub = form.watch(() => save())
     return () => sub.unsubscribe()
-  }, [restored, step, results, form])
+  }, [restored, step, hasResults, form])
 
   async function nextStep() {
     const valid = await form.trigger(stepFields[step])
@@ -236,25 +245,42 @@ export function CalculatorFlow() {
     window.scrollTo({ top: 0, behavior: "instant" })
   }
 
+  function startOver() {
+    try {
+      sessionStorage.removeItem(STORAGE_KEY)
+    } catch {}
+    form.reset()
+    setResults(null)
+    setResumePrompt(null)
+    setStep(1)
+  }
+
   // One-frame gate so a restored session doesn't flash step 1 before jumping
   if (!restored) {
     return <div className="mx-auto min-h-[50vh] max-w-2xl" aria-hidden />
   }
 
+  if (resumePrompt) {
+    return (
+      <>
+        <div className="mx-auto min-h-[50vh] max-w-2xl" aria-hidden />
+        <ResumePlanDialog
+          open
+          results={resumePrompt}
+          units={units}
+          onResume={() => {
+            setResults(resumePrompt)
+            setResumePrompt(null)
+          }}
+          onStartOver={startOver}
+        />
+      </>
+    )
+  }
+
   if (results) {
     return (
-      <Results
-        results={results}
-        onEdit={() => setResults(null)}
-        onReset={() => {
-          try {
-            sessionStorage.removeItem(STORAGE_KEY)
-          } catch {}
-          form.reset()
-          setResults(null)
-          setStep(1)
-        }}
-      />
+      <Results results={results} onEdit={() => setResults(null)} onReset={startOver} />
     )
   }
 
