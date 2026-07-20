@@ -9,13 +9,7 @@ import {
 } from "@/lib/content/articles"
 import { sourceHost } from "@/lib/content/markdown"
 import { ArticleCard } from "@/components/content/article-card"
-import {
-  SITE_URL,
-  SITE_NAME,
-  AUTHOR_NAME,
-  AUTHOR_URL,
-  LEARN_PATH,
-} from "@/lib/site"
+import { SITE_URL, SITE_NAME, LEARN_PATH } from "@/lib/site"
 
 export const dynamicParams = false
 
@@ -46,7 +40,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: "article",
       publishedTime: article.published,
       modifiedTime: article.updated,
-      authors: [AUTHOR_URL],
     },
     twitter: {
       card: "summary_large_image",
@@ -80,7 +73,7 @@ export default async function ArticlePage({ params }: PageProps) {
     description: article.description,
     datePublished: article.published,
     dateModified: article.updated,
-    author: { "@type": "Person", name: AUTHOR_NAME, url: AUTHOR_URL },
+    author: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
@@ -132,18 +125,17 @@ export default async function ArticlePage({ params }: PageProps) {
         </h1>
 
         <div className="eyebrow mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
-          <span>By {AUTHOR_NAME}</span>
+          <span className="text-primary">Fact-checked</span>
+          <span aria-hidden>·</span>
+          <span>{article.sourceCount} sources cited</span>
           <span aria-hidden>·</span>
           <span>{article.readingMinutes} min read</span>
-          <span aria-hidden>·</span>
-          <span>{article.sourceCount} sources</span>
           <span aria-hidden>·</span>
           <time dateTime={article.updated}>Updated {formatDate(article.updated)}</time>
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          Independently fact-checked. Every study is linked inline so you can read the source
-          yourself.
+          Every source is linked inline, so you can check the claims yourself.
         </p>
 
         <div
