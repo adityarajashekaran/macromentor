@@ -423,9 +423,6 @@ export function Results({
         </div>
       )}
 
-      {/* ——— What the plan was built from ——— */}
-      <InputsCard r={r} units={units} />
-
       {/* ——— Energy map ——— */}
       <EnergyScale r={r} energy={energy} />
 
@@ -499,6 +496,9 @@ export function Results({
           .
         </p>
       </div>
+
+      {/* ——— What the plan was built from ——— */}
+      <InputsCard r={r} units={units} />
 
       {/* ——— Body metrics (energy numbers live on the map above) ——— */}
       <div className="print-block mt-6 grid grid-cols-2 gap-2.5">
