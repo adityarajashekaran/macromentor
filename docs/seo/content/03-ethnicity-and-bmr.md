@@ -14,9 +14,9 @@ A [2016 study by Song and colleagues](https://pubmed.ncbi.nlm.nih.gov/26568151/)
 
 ## The numbers, population by population
 
-For South Asian ancestry, the studies above put the gap in the range of roughly 2 to 6%, with formulas built on total body weight overestimating BMR more than formulas anchored to fat-free mass. MacroMentor applies a 5% downward correction on the Mifflin-St Jeor path for this group, sitting near the upper end of that published range.
+For South Asian ancestry, the studies above put the gap in the range of roughly 2 to 6%, with formulas built on total body weight overestimating BMR more than formulas anchored to fat-free mass. MacroMentor applies a 4% downward correction on the Mifflin-St Jeor path for this group, landing inside that published range.
 
-For East Asian ancestry, a [2016 study by Camps and colleagues](https://pubmed.ncbi.nlm.nih.gov/27581329/) measured basal metabolic rate by indirect calorimetry in 232 Singaporean Chinese adults and tested it against six predictive equations, Mifflin-St Jeor included. Mifflin overestimated measured BMR by about 39 calories a day, roughly 2.6% off. MacroMentor's 3% adjustment lands close to that figure.
+For East Asian ancestry, a [2016 study by Camps and colleagues](https://pubmed.ncbi.nlm.nih.gov/27581329/) measured basal metabolic rate by indirect calorimetry in 232 Singaporean Chinese adults and tested it against six predictive equations, Mifflin-St Jeor included. Mifflin overestimated measured BMR by about 39 calories a day, roughly 2.6% off. MacroMentor applies a 4% downward correction here, a touch above that single-study figure but within the wider range these population comparisons report.
 
 Worth flagging: a [2017 study of 30 elite Indian male weightlifters](https://pubmed.ncbi.nlm.nih.gov/28670532/) found the opposite problem. Every formula tested, Mifflin-St Jeor and Cunningham among them, underestimated their measured energy expenditure, because lean body mass, not total body weight, was the real driver of their metabolic rate. That's not a contradiction of the ethnicity research; it's a reminder that individual body composition can override a population average, which is exactly why MacroMentor turns the ethnicity adjustment off the moment you enter a body fat percentage.
 

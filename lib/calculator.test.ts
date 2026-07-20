@@ -145,13 +145,13 @@ describe('calculateBMR - Based on healthcalculations.md Spec', () => {
     const baseBmrMale = 10 * weight + 6.25 * height - 5 * age + 5 // 1617.5
     const baseBmrFemale = 10 * weight + 6.25 * height - 5 * age - 161 // 1301.5
 
-    // Test adjustments on base Mifflin BMR
-    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'south_asian')).toBe(Math.round(baseBmrMale * 0.95))
-    expect(calculateBMR(weight, height, age, 'female', undefined, undefined, 'east_asian')).toBe(Math.round(baseBmrFemale * 0.97))
-    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'african')).toBe(Math.round(baseBmrMale * 1.03))
-    expect(calculateBMR(weight, height, age, 'female', undefined, undefined, 'pacific_islander')).toBe(Math.round(baseBmrFemale * 1.03))
-    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'nordic')).toBe(Math.round(baseBmrMale * 1.03))
-    expect(calculateBMR(weight, height, age, 'female', undefined, undefined, 'default')).toBe(Math.round(baseBmrFemale))
+    // Research-backed downward adjustments (see citations in calculator.ts):
+    // standard formulas over-predict BMR in each of these groups.
+    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'south_asian')).toBe(Math.round(baseBmrMale * 0.96)) // -4%
+    expect(calculateBMR(weight, height, age, 'female', undefined, undefined, 'east_asian')).toBe(Math.round(baseBmrFemale * 0.96)) // -4%
+    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'african')).toBe(Math.round(baseBmrMale * 0.95)) // -5%
+    expect(calculateBMR(weight, height, age, 'female', undefined, undefined, 'default')).toBe(Math.round(baseBmrFemale)) // no adjustment
+    expect(calculateBMR(weight, height, age, 'male', undefined, undefined, 'other')).toBe(Math.round(baseBmrMale)) // no adjustment
 
     // Test that adjustment is NOT applied if BF% is provided (Katch used)
     const lbm = weight * (1 - 20/100) // 56kg

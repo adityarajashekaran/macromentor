@@ -1,6 +1,16 @@
 # Content pieces — fact-check summary
 Generated 2026-07-20 via research -> write -> independent fact-check pipeline (6 pieces, 18 agents total).
 
+> **Resolved 2026-07-20 (after this summary was generated):** the fact-checkers
+> flagged, in pieces 03 and 05, that `lib/calculator.ts` applied uncited/backwards
+> ethnicity adjustments (african +3%, pacific_islander +3%, nordic +3%). Cross-checked
+> against the original internal research review (the source behind
+> healthcalculations.md) and corrected the code to match its Section 5 findings:
+> south_asian -4%, east_asian -4%, african **-5%** (was +3%, direction was inverted),
+> and Nordic + Pacific Islander removed as options (no research-backed adjustment).
+> The content pieces below were then synced to the corrected numbers. The flags in
+> the 03 and 05 sections are kept as a record of what was caught, not open issues.
+
 ## 01-which-bmr-formula
 **Which BMR formula should you use — Mifflin-St Jeor, Katch-McArdle, or Cunningham?**
 Word count: 1050

@@ -7,7 +7,7 @@ export function calculateBMR(
   sex: "male" | "female" | "other",
   bodyFat?: number, // as percentage
   trainingExperience?: "none" | "beginner" | "intermediate" | "advanced",
-  ethnicity?: "default" | "south_asian" | "east_asian" | "african" | "pacific_islander" | "nordic" | "other",
+  ethnicity?: "default" | "south_asian" | "east_asian" | "african" | "other",
 ): number {
   // If body fat percentage is provided
   if (bodyFat !== undefined) {
@@ -35,20 +35,28 @@ export function calculateBMR(
     bmr = 10 * weight + 6.25 * height - 5 * age - 78
   }
 
-  // Tier 3: Apply Population-Based Adjustments (Ethnicity) ONLY if using Mifflin (BF% not provided)
-  if (bodyFat === undefined && ethnicity && ethnicity !== 'default') {
+  // Tier 3: population-level adjustment, applied to Mifflin-St Jeor only (no BF%).
+  // Magnitudes and direction come from the internal research review (see
+  // healthcalculations.md and docs/seo/content/03-ethnicity-and-bmr.md), which
+  // synthesises the equation-validation literature. All three are DOWNWARD:
+  // standard Caucasian-derived formulas over-predict BMR in each of these groups.
+  //   - African descent  -5%: RMR runs ~5-10% lower vs Caucasians even after
+  //     FFM/FM adjustment (organ-mass proportion, ancestry). Conservative low end.
+  //     Sharp 2002 (PMID 12181380); Manini 2011 (PMID 21468093).
+  //   - East Asian  -4%: standard formulas over-predict measured BMR; difference
+  //     largely body-composition driven. Camps 2016 (PMID 27581329).
+  //   - South Asian -4%: lower FFM / higher body-fat % at a given BMI ("Asian
+  //     Indian phenotype"). Soares 1998 (PMID 9624224); Song 2016 (PMID 26568151).
+  // Nordic and Pacific Islander are deliberately absent: the review found Nordic
+  // to be baseline (no adjustment) and no published basis for a Pacific Islander
+  // figure. Both were removed from the options rather than ship a made-up number.
+  if (bodyFat === undefined && ethnicity) {
       if (ethnicity === 'south_asian') {
-          bmr *= 0.95 // -5%
+          bmr *= 0.96 // -4%
       } else if (ethnicity === 'east_asian') {
-          bmr *= 0.97 // -3% (Assuming based on potential lower rates)
+          bmr *= 0.96 // -4%
       } else if (ethnicity === 'african') {
-          bmr *= 1.03 // +3% (Assuming based on potential higher rates)
-      } else if (ethnicity === 'pacific_islander') {
-          bmr *= 1.03 // +3% (Assuming based on potential higher rates)
-      } // Add other specific populations as needed based on research
-      // Nordic is mentioned in spec table example but not explicitly listed for adjustment %? Using +3% for now.
-      else if (ethnicity === 'nordic') {
-          bmr *= 1.03 // +3%
+          bmr *= 0.95 // -5%
       }
   }
 

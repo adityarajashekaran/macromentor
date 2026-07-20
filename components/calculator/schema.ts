@@ -51,9 +51,7 @@ export const formSchema = z.object({
 
   // Step 3 — Refinements (all optional)
   dietType: z.enum(["standard", "vegetarian", "vegan"]).default("standard"),
-  ethnicity: z
-    .enum(["default", "south_asian", "east_asian", "african", "pacific_islander", "nordic", "other"])
-    .default("default"),
+  ethnicity: z.enum(["default", "south_asian", "east_asian", "african", "other"]).default("default"),
   waistCircumference: z.preprocess(
     (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
     z.number().min(50, "Enter a realistic waist").max(200, "Enter a realistic waist").optional(),
@@ -117,12 +115,15 @@ export const dietTypeOptions = [
   { value: "vegan", label: "Vegan" },
 ] as const
 
+// Only backgrounds with a published, research-backed BMR adjustment are listed
+// (see the adjustment logic + citations in lib/calculator.ts). Pacific Islander
+// and Nordic were dropped: no supported downward adjustment for the former, and
+// the literature treats Nordic as baseline. Anyone else picks "Another background",
+// which applies no adjustment.
 export const ethnicityOptions = [
   { value: "default", label: "Prefer not to say" },
   { value: "south_asian", label: "South Asian" },
   { value: "east_asian", label: "East Asian" },
   { value: "african", label: "Black / African descent" },
-  { value: "pacific_islander", label: "Pacific Islander" },
-  { value: "nordic", label: "Nordic / Northern European" },
   { value: "other", label: "Another background" },
 ] as const

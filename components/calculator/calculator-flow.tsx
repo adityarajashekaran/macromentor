@@ -635,11 +635,11 @@ export function CalculatorFlow() {
                                   </SelectContent>
                                 </Select>
                                 <FieldHint>
-                                  Studies show resting metabolism differs slightly across some
-                                  populations. This only nudges the standard formula (±3–5%), is
-                                  skipped entirely if you gave a body-fat %, and is always flagged
-                                  in your results. Only backgrounds with published research are
-                                  listed.
+                                  Standard formulas were built mostly on Caucasian populations and
+                                  slightly over-predict resting metabolism for some groups. This
+                                  trims the estimate by 4–5% where research supports it, is skipped
+                                  entirely if you gave a body-fat %, and is always flagged in your
+                                  results. Only backgrounds with published research are listed.
                                 </FieldHint>
                                 <FormMessage />
                               </FormItem>

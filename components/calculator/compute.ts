@@ -133,9 +133,11 @@ export function buildResults(data: CalculatorFormValues): CalculationResults {
         ? "Katch-McArdle equation — lean body mass"
         : "Mifflin-St Jeor equation — the validated general formula"
 
+  // Keep this list in sync with the adjustment branch in lib/calculator.ts — the
+  // warning must only fire for groups that actually get a BMR adjustment.
   const ethnicityAdjustmentApplied =
     data.bodyFat === undefined &&
-    ["south_asian", "east_asian", "african", "pacific_islander", "nordic"].includes(data.ethnicity)
+    ["south_asian", "east_asian", "african"].includes(data.ethnicity)
 
   const tdee = calculateTDEE(bmr, data.activityLevel)
 
