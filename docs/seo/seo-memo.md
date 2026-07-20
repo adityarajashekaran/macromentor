@@ -70,8 +70,8 @@ FAQ answers and on-page copy, not as page titles to compete on.
 
 ## 3. Content
 
-Drafted + fact-checked, in `docs/seo/content/` (still need: publish to the live site as pages,
-each linking into /calculator; and the piece-06 inline CITATION-NEEDED marker resolved):
+Drafted + fact-checked, in `docs/seo/content/`, and **now LIVE on the site** in the `/learn`
+hub (built 2026-07-20 — see "Learn content hub" note below):
 
 1. [x] Which BMR formula should you use — Mifflin-St Jeor, Katch-McArdle, or Cunningham?
 2. [x] The 1,200-calorie floor: where it comes from, and when a calculator should refuse to go lower
@@ -80,10 +80,30 @@ each linking into /calculator; and the piece-06 inline CITATION-NEEDED marker re
 5. [x] MacroMentor vs. calculator.net vs. TDEE calculator: how the numbers differ, and why
 6. [x] Refeed days and diet breaks: a simple, calculator-backed guide
 7. [x] Quick answers FAQ: TEF / protein, BMR vs RMR, how much to trust the number
+8. [x] NEAT: the ~2,000 kcal/day your activity dropdown flattens
+9. [x] Why BMI lies, and lies differently depending on your ancestry
+10. [x] Cold-adapted metabolism: the few percent that doesn't save you
+11. [x] Does metabolism actually slow with age? (Pontzer 2021)
 
-Queued for the next batch (briefs in `docs/seo/content/_queued-articles.md`, need a fresh
-web-search budget): NEAT (~2,000 kcal/day variance), BMI-lies-by-ancestry, cold-adapted
-metabolism +7%, "does metabolism slow with age" (Pontzer 2021).
+All 11 shipped and fact-checked (batch-2 logs in `_fact-check-summary.md`). Next content batch:
+add new briefs to `_queued-articles.md`.
+
+### Learn content hub (shipped 2026-07-20)
+
+The 11 pieces render as real, statically-generated pages under `/learn`, in the site theme:
+- `app/learn/page.tsx` — index: hero, featured (piece 01), category sections, CTA. CollectionPage
+  + ItemList + BreadcrumbList JSON-LD.
+- `app/learn/[slug]/page.tsx` — article template: byline, reading time, source count, rendered
+  body, auto-built References list, inline + related-article CTAs. Article + BreadcrumbList JSON-LD,
+  per-article canonical + OG.
+- `app/learn/[slug]/opengraph-image.tsx` — per-article social image (parameterized
+  `og-image-content.tsx`).
+- `lib/content/registry.ts` — SEO source of truth (slug, category, description, keywords, dates).
+  Adding an article = one entry here once its markdown is written + fact-checked.
+- `lib/content/markdown.ts` (+ `.test.ts`, 14 tests) — small in-house markdown renderer for the
+  known content subset; no runtime markdown dependency added.
+- `lib/content/articles.ts` — build-time loader (reads `docs/seo/content/*.md`).
+- `app/sitemap.ts` now includes `/learn` + every article. Header nav has a "Learn" link.
 
 ## 4. Distribution / backlinks
 

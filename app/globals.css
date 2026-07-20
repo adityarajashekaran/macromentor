@@ -135,6 +135,63 @@
     border-color: hsl(var(--primary));
     transform: translateY(-2px);
   }
+
+  /* teal inline link used inside rendered article prose + reference lists */
+  .mm-inline-link {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-decoration-color: hsl(var(--primary) / 0.4);
+    text-underline-offset: 2px;
+    transition: text-decoration-color 0.15s ease;
+  }
+  .mm-inline-link:hover {
+    text-decoration-color: hsl(var(--primary));
+  }
+
+  /* long-form article body rendered from markdown (lib/content/markdown.ts) */
+  .article-prose {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: hsl(var(--foreground));
+  }
+  .article-prose > p {
+    margin-top: 1.35em;
+  }
+  .article-prose > p:first-child {
+    margin-top: 0;
+  }
+  .article-prose > h2 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 2.2em;
+    margin-bottom: 0.2em;
+    scroll-margin-top: 5rem;
+  }
+  .article-prose > h3 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1.8em;
+    margin-bottom: 0.2em;
+    scroll-margin-top: 5rem;
+  }
+  .article-prose > ul {
+    margin-top: 1.35em;
+    padding-left: 1.25em;
+    list-style: disc;
+  }
+  .article-prose > ul > li {
+    margin-top: 0.5em;
+    padding-left: 0.25em;
+  }
+  .article-prose > ul > li::marker {
+    color: hsl(var(--primary));
+  }
+  .article-prose strong {
+    font-weight: 700;
+  }
 }
 
 @layer utilities {

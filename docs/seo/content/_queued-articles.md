@@ -1,8 +1,24 @@
-# Queued articles — briefs for the next batch
+# Queued articles — briefs
 
-These need a FRESH session (this session's web-search budget hit 200/200). Run each through the
-same research -> write -> independent fact-check Workflow pipeline used for pieces 01-06. Voice
-rules: see the `content-voice` memory (Hutchinson/Hamblin register, hard bans, every scientific
+**STATUS (2026-07-20): all four below SHIPPED.** Written + independently fact-checked via the
+Workflow pipeline (4 pieces, 12 agents, 0 claims cut) and now live in the `/learn` hub as pieces
+08-11. Fact-check logs are in `_fact-check-summary.md` (Batch 2). The briefs are kept below as a
+record of the angles. Nothing here is outstanding; add new briefs above this line for the next batch.
+
+- A. NEAT -> `08-neat-activity-thermogenesis.md` (slug `neat-activity-thermogenesis`, category: formulas & accuracy)
+- B. BMI lies by ancestry -> `09-bmi-and-ancestry.md` (slug `bmi-and-ancestry`, category: beyond calories)
+- C. Cold-adapted metabolism -> `10-cold-adapted-metabolism.md` (slug `cold-adapted-metabolism`, category: metabolism)
+- D. Does metabolism slow with age -> `11-does-metabolism-slow-with-age.md` (slug `does-metabolism-slow-with-age`, category: metabolism)
+
+The pieces C and D sensitive/group-level content cleared the hard rule: every circumpolar-population
+and ancestry claim carries a verified PMID (or a verified authoritative full-text link where the
+journal isn't PubMed-indexed), and both frame differences as environmental/adaptive, not essentialist.
+
+---
+
+## Original briefs (for the record)
+
+Voice rules: see the `content-voice` memory (Hutchinson/Hamblin register, hard bans, every scientific
 claim linked to a verified PMID). Each brief below gives the angle and the raw material already
 surfaced from the user's internal research review, but every claim still needs a fresh fact-check
 and a real source link before publish.

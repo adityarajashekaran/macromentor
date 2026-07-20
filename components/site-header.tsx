@@ -17,6 +17,14 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-3">
+          <Link
+            href="/learn"
+            className={`eyebrow transition-colors hover:text-foreground ${
+              pathname.startsWith("/learn") ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            Learn
+          </Link>
           <a
             href="https://horizonfall.com"
             target="_blank"
