@@ -76,7 +76,17 @@ export interface CalculationResults {
     bmi: number
     lbm?: number
     bodyFatPercentage?: number
+    whtr?: number
+    whtrCategory?: "healthy" | "increased" | "high"
   }
+}
+
+/** Waist-to-height ratio band: <0.5 healthy, 0.5–0.6 increased risk, ≥0.6 high — the
+ * widely-cited "keep your waist under half your height" screening thresholds. */
+function whtrCategory(whtr: number): "healthy" | "increased" | "high" {
+  if (whtr < 0.5) return "healthy"
+  if (whtr < 0.6) return "increased"
+  return "high"
 }
 
 const PAL: Record<CalculatorFormValues["activityLevel"], number> = {
@@ -148,6 +158,9 @@ export function buildResults(data: CalculatorFormValues): CalculationResults {
     data.bodyFat !== undefined
       ? parseFloat((data.weight * (1 - data.bodyFat / 100)).toFixed(1))
       : undefined
+  const whtr = data.waistCircumference
+    ? parseFloat((data.waistCircumference / data.height).toFixed(2))
+    : undefined
 
   const micronutrients = {
     iron: data.sex === "female" && data.age < 50 ? 18 : 8,
@@ -195,7 +208,13 @@ export function buildResults(data: CalculatorFormValues): CalculationResults {
     macros,
     micronutrients,
     warnings: { belowMinimum, refeedRecommended, ethnicityAdjustmentApplied },
-    metrics: { bmi, lbm, bodyFatPercentage: data.bodyFat },
+    metrics: {
+      bmi,
+      lbm,
+      bodyFatPercentage: data.bodyFat,
+      whtr,
+      whtrCategory: whtr !== undefined ? whtrCategory(whtr) : undefined,
+    },
   }
 }
 
@@ -213,7 +232,7 @@ export function formatSummary(r: CalculationResults, units: UnitPrefs): string {
     ``,
     `BMR ${formatEnergy(r.bmr, energy)} (${r.bmrMethod})`,
     `TDEE ${formatEnergy(r.tdee, energy)} (activity ×${r.palMultiplier})`,
-    `BMI ${r.metrics.bmi}${r.metrics.lbm ? ` · Lean mass ${formatWeight(r.metrics.lbm, weight)}` : ""}`,
+    `BMI ${r.metrics.bmi}${r.metrics.lbm ? ` · Lean mass ${formatWeight(r.metrics.lbm, weight)}` : ""}${r.metrics.whtr !== undefined ? ` · Waist-to-height ratio ${r.metrics.whtr.toFixed(2)} (${r.metrics.whtrCategory})` : ""}`,
     `Profile: ${p.age}y · ${p.sex} · ${formatHeight(p.height, height)} · ${formatWeight(p.weight, weight)}${p.bodyFat !== undefined ? ` · ${p.bodyFat}% body fat` : ""}`,
     `Lifestyle: ${optionLabel(activityLevelOptions, p.activityLevel)} · lifting: ${optionLabel(trainingExperienceOptions, p.trainingExperience).toLowerCase()} · ${optionLabel(dietTypeOptions, p.dietType).toLowerCase()}`,
     ``,

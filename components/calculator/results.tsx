@@ -22,6 +22,7 @@ import {
   formatLength,
   type EnergyUnit,
   type WeightUnit,
+  type LengthUnit,
   type UnitPrefs,
 } from "@/lib/units"
 
@@ -221,6 +222,89 @@ function InputsCard({ r, units }: { r: CalculationResults; units: UnitPrefs }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+/**
+ * Waist-to-height ratio: only shown when a waist measurement was given.
+ * Same "mark a position on a track" language as the energy map above, so
+ * the two body-composition checks read as a pair, not two different UIs.
+ */
+function WaistRatioCard({ r, waistUnit }: { r: CalculationResults; waistUnit: LengthUnit }) {
+  const { whtr, whtrCategory } = r.metrics
+  if (whtr === undefined || whtrCategory === undefined || r.userProfile.waistCircumference === undefined)
+    return null
+
+  const min = 0.35
+  const max = 0.75
+  const pos = (x: number) => Math.min(98, Math.max(2, ((x - min) / (max - min)) * 100))
+  const healthyEnd = pos(0.5)
+  const increasedEnd = pos(0.6)
+
+  const categoryMeta = {
+    healthy: { label: "Healthy range", color: "hsl(var(--primary))" },
+    increased: { label: "Increased risk", color: "hsl(var(--pop-gold))" },
+    high: { label: "High risk", color: "hsl(var(--pop-orange))" },
+  }[whtrCategory]
+
+  return (
+    <div className="print-block mt-6 rounded-lg border border-border bg-card p-6">
+      <div className="flex items-baseline justify-between">
+        <h2 className="font-heading text-xl font-bold">Waist-to-height ratio</h2>
+        <p className="eyebrow text-muted-foreground">a second body-composition check</p>
+      </div>
+
+      <div className="relative mt-10 mb-3">
+        <div className="relative h-3 w-full overflow-hidden rounded-full bg-border/40">
+          <div
+            className="absolute inset-y-0 left-0"
+            style={{ width: `${healthyEnd}%`, background: "hsl(var(--primary) / 0.55)" }}
+          />
+          <div
+            className="absolute inset-y-0"
+            style={{
+              left: `${healthyEnd}%`,
+              width: `${increasedEnd - healthyEnd}%`,
+              background: "hsl(var(--pop-gold) / 0.55)",
+            }}
+          />
+          <div
+            className="absolute inset-y-0"
+            style={{
+              left: `${increasedEnd}%`,
+              right: 0,
+              background: "hsl(var(--pop-orange) / 0.55)",
+            }}
+          />
+        </div>
+        <div
+          className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background shadow-sm"
+          style={{ left: `${pos(whtr)}%`, background: categoryMeta.color }}
+        />
+        <div
+          className="absolute mt-2 -translate-x-1/2 text-center"
+          style={{ left: `${pos(whtr)}%`, top: "100%" }}
+        >
+          <p className="font-mono text-sm font-bold tnum" style={{ color: categoryMeta.color }}>
+            {whtr.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-8 flex items-center gap-2 text-sm font-medium" style={{ color: categoryMeta.color }}>
+        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: categoryMeta.color }} />
+        {categoryMeta.label}
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+        Waist ({formatLength(r.userProfile.waistCircumference, waistUnit)}) divided by height. Unlike
+        BMI, it says something about <em>where</em> weight sits — a wide rule of thumb is to keep your
+        waist under half your height. It doesn't change your calorie target
+        {whtrCategory !== "healthy"
+          ? ", but it's already the reason your omega-3 guidance below was raised."
+          : "."}
+      </p>
     </div>
   )
 }
@@ -509,6 +593,9 @@ export function Results({
           <Stat label="Weight" value={formatWeight(r.userProfile.weight, weightUnit)} />
         )}
       </div>
+
+      {/* ——— Waist-to-height ratio (only when a waist measurement was given) ——— */}
+      <WaistRatioCard r={r} waistUnit={units.waist} />
 
       {/* ——— How it was calculated ——— */}
       <div className="print-block mt-6 rounded-lg border border-border bg-card p-6">
