@@ -271,15 +271,6 @@ export default function Home() {
               Aggressive targets are easy to generate and miserable to live with. The engine caps
               what it will recommend and warns you when your inputs push against the limits.
             </p>
-            <blockquote className="mt-8 border-l-2 border-primary pl-4">
-              <p className="text-sm italic leading-relaxed text-muted-foreground">
-                &ldquo;It hasn&apos;t helped me lose weight yet. The tool works; adherence is its
-                own problem.&rdquo;
-              </p>
-              <cite className="eyebrow mt-2 block not-italic text-muted-foreground">
-                — Aditya, who built this
-              </cite>
-            </blockquote>
           </div>
 
           <ul className="space-y-0 divide-y divide-border rounded-lg border border-border bg-card px-6">
