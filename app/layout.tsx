@@ -57,11 +57,8 @@ export const metadata: Metadata = {
     description:
       "A calorie and macro calculator that picks the right formula for your body and shows every step of the math.",
   },
-  // Paste the value Google Search Console gives you into GOOGLE_SITE_VERIFICATION
-  // (project settings -> Environment Variables on Vercel, or .env.local for dev).
-  // Leave it unset and this line renders nothing — safe to deploy either way.
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    google: "-P2osicZDIriMjkBGEfw4TioA8-QIZnhm7d3d03z_ns",
   },
 }
 
