@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     "bulking calories",
   ],
   metadataBase: new URL("https://macromentor.horizonfall.com"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "MacroMentor — know exactly how much to eat",
     description:
@@ -47,6 +50,18 @@ export const metadata: Metadata = {
     url: "https://macromentor.horizonfall.com",
     siteName: "MacroMentor",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MacroMentor — know exactly how much to eat",
+    description:
+      "A calorie and macro calculator that picks the right formula for your body and shows every step of the math.",
+  },
+  // Paste the value Google Search Console gives you into GOOGLE_SITE_VERIFICATION
+  // (project settings -> Environment Variables on Vercel, or .env.local for dev).
+  // Leave it unset and this line renders nothing — safe to deploy either way.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
   },
 }
 

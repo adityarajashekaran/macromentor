@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Calculator — MacroMentor",
   description:
     "Three steps to your daily calories and macros. Tiered BMR formulas, TDEE from your real activity, goal-based targets with safety caps.",
+  alternates: {
+    canonical: "/calculator",
+  },
 }
 
 export default function CalculatorPage() {
