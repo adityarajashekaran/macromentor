@@ -10,7 +10,7 @@ Restrict calories long enough and leptin, the hormone that signals "you have eno
 
 One caveat worth sitting with: [Hall's own 2022 reanalysis](https://pubmed.ncbi.nlm.nih.gov/34816627/) of the Biggest Loser data pushed back on the doom version of this story. The contestants who kept exercising the most also showed the biggest apparent metabolic adaptation, which fits a model where the body reallocates energy spending to hold total output in a narrow range, rather than one where dieting simply breaks your metabolism for good.
 
-The size of that slowdown also isn't uniform from person to person, and some of the variation may track with more than just how hard you train. Some research suggests resting energy expenditure can fall further, relative to the lean mass actually lost, in Black women than in white women over the same weight loss. <!-- CITATION NEEDED before publish: specific study for the Black vs white women differential-adaptation claim; drawn from internal research review, PMID not yet attached (web-search budget exhausted this session). Verify and link, or cut. --> The practical read is the same either way: whatever number your calculator hands you at the start of a cut drifts as you go, so the target is a starting line, not a fixed setting.
+The size of that slowdown isn't uniform from person to person either, and it's worth holding the exact figure loosely. Whatever number your calculator hands you at the start of a cut drifts as you go, so treat the target as a starting line, not a fixed setting.
 
 ## Refeed day vs. diet break: not the same thing
 

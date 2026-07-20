@@ -7,8 +7,11 @@ claim linked to a verified PMID). Each brief below gives the angle and the raw m
 surfaced from the user's internal research review, but every claim still needs a fresh fact-check
 and a real source link before publish.
 
-Also unfinished from this batch: piece 06 has an inline `CITATION NEEDED` marker on the
-"Black vs white women differential metabolic adaptation" claim, verify+link it or cut it.
+Cut from piece 06 (do NOT re-add without credible, linked evidence): a claim that resting energy
+expenditure falls further in Black women than white women over the same weight loss. It's from the
+internal research review but had no attachable PMID this session. Per the user's standing rule, no
+sensitive group-level assertion ships without a credible source link. Only restore it if a real
+study can be verified and linked; otherwise leave it out.
 
 ---
 
